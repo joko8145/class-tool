@@ -68,7 +68,8 @@
     }
     .timer-panel {
       display: flex; flex-direction: column; align-items: center;
-      justify-content: center; gap: 12px;
+      justify-content: flex-start; gap: 12px;
+      padding-top: 20px; padding-bottom: 20px;
     }
     .activity-badge {
       font-size: 1.3rem; font-weight: 700; color: var(--accent);
@@ -89,7 +90,10 @@
     .timer-label { font-size: 1.2rem; color: var(--muted); }
     .timer-panel.running .timer-face { color: var(--ok); }
     .timer-panel.finished .timer-face { color: var(--danger); }
-    .timer-actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 8px; }
+    .timer-actions {
+      display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;
+      margin-top: auto; flex-shrink: 0; width: 100%; padding-top: 12px;
+    }
     .settings { background: var(--surface); border-radius: 16px; padding: 20px 24px; }
     .settings h2 { margin: 0 0 8px; font-size: 1.2rem; }
     .field { margin-bottom: 14px; }
@@ -136,10 +140,18 @@
     body.present .top-bar, body.present .settings { display: none; }
     body.present .app { max-width: none; padding: 20px 24px; }
     body.present .announcement-title { font-size: clamp(2rem, 5vw, 3rem); }
-    body.present .stage { min-height: calc(100dvh - 220px); align-items: center; }
-    body.present .image-panel, body.present .timer-panel { min-height: 420px; }
-    body.present .image-panel img { max-height: 70vh; }
-    body.present .timer-actions { display: none; }
+    body.present .stage { min-height: calc(100dvh - 200px); align-items: stretch; }
+    body.present .image-panel, body.present .timer-panel { min-height: 300px; }
+    body.present .image-panel img { max-height: 58vh; }
+    body.present .timer-face { font-size: clamp(3rem, 11vw, 5.5rem); }
+    body.present .timer-actions {
+      position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+      z-index: 90; width: auto; margin-top: 0; padding: 12px 18px;
+      background: rgba(15,28,46,0.92); border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.15);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+    }
+    body.present .timer-actions .btn { padding: 14px 22px; font-size: 1.05rem; }
     @media (max-width: 900px) {
       .stage { grid-template-columns: 1fr; }
       .image-panel, .timer-panel { min-height: 260px; }
