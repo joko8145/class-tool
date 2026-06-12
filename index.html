@@ -399,9 +399,9 @@
         <button type="button" class="btn primary" id="saveActivityBtn"></button>
         <button type="button" class="btn" id="newActivityBtn"></button>
         <button type="button" class="btn danger" id="deleteActivityBtn"></button>
-        <button type="button" class="btn" id="exportJsonBtn"></button>
-        <button type="button" class="btn" id="reloadJsonBtn"></button>
+        <button type="button" class="btn primary" id="copyCmdBtn"></button>
       </div>
+      <p class="hint" id="syncHint"></p>
       <p class="save-toast" id="saveToast" hidden></p>
     </section>
   </div>
@@ -452,10 +452,9 @@
     savedOk: "\uC800\uC7A5\uB418\uC5C8\uC2B5\uB2C8\uB2E4.",
     newAct: "\uC0C8 \uD65C\uB3D9",
     del: "\uC0AD\uC81C",
-    exportJson: "JSON \uBCF5\uC0AC (GitHub\uC6A9)",
-    reloadJson: "GitHub \uAE30\uBCF8\uAC12 \uBD88\uB7EC\uC624\uAE30",
-    exportOk: "activities.json\uC774 \uBCF5\uC0AC\uB418\uC5C8\uC2B5\uB2C8\uB2E4. GitHub \uC6F9\uC5D0 \uBD99\uC5EC\uB123\uC9C0 \uB9C8\uC138\uC694. CMD\uC5D0\uC11C git push \uD558\uC138\uC694.",
-    reloadConfirm: "GitHub \uAE30\uBCF8 \uC124\uC815\uC744 \uBD88\uB7EC\uC635\uB2C8\uB2E4. \uC774 \uAE30\uAE30\uC758 \uC218\uC815 \uC0AC\uD56D\uC740 \uC0AC\uB77C\uC9D1\uB2C8\uB2E4. \uACC4\uC18D\uD560\uAE4C\uC694?",
+    copyCmd: "PC \uBA85\uB839\uC5B4 \uBCF5\uC0AC",
+    cmdCopied: "CMD \uBA85\uB839\uC5B4\uAC00 \uBCF5\uC0AC\uB418\uC5C8\uC2B5\uB2C8\uB2E4. PC\uC5D0\uC11C \uBD99\uC5EC\uB123\uC73C\uC138\uC694.",
+    syncHint: "\uD0DC\uBE14\uB9BF: \uC218\uC815 \u2192 \uCD5C\uC885 \uC800\uC7A5 \u2192 PC \uBA85\uB839\uC5B4 \uBCF5\uC0AC \u2192 PC cmd \u2192 \uD0DC\uBE14\uB9BF \uC0C8\uB85C\uACE0\uCE68",
     ready: "\uC900\uBE44",
     running: "\uC9C4\uD589 \uC911",
     paused: "\uC77C\uC2DC\uC815\uC9C0",
@@ -582,8 +581,8 @@
     saveActivityBtn: document.getElementById("saveActivityBtn"),
     newActivityBtn: document.getElementById("newActivityBtn"),
     deleteActivityBtn: document.getElementById("deleteActivityBtn"),
-    exportJsonBtn: document.getElementById("exportJsonBtn"),
-    reloadJsonBtn: document.getElementById("reloadJsonBtn"),
+    copyCmdBtn: document.getElementById("copyCmdBtn"),
+    syncHint: document.getElementById("syncHint"),
     saveToast: document.getElementById("saveToast")
   };
 
@@ -631,8 +630,8 @@
     els.saveActivityBtn.textContent = T.save;
     els.newActivityBtn.textContent = T.newAct;
     els.deleteActivityBtn.textContent = T.del;
-    els.exportJsonBtn.textContent = T.exportJson;
-    els.reloadJsonBtn.textContent = T.reloadJson;
+    els.copyCmdBtn.textContent = T.copyCmd;
+    els.syncHint.textContent = T.syncHint;
     els.timerLabel.textContent = T.ready;
   }
 
@@ -1137,31 +1136,31 @@
     }
   }
 
-  function exportForGitHub() {
-    var out = {
-      activities: state.activities.map(function (a) {
-        a = normalizeActivity(a);
-        return {
-          id: a.id,
-          category: a.category,
-          name: a.name,
-          sub: a.sub || "",
-          fontKey: a.fontKey || "malgun",
-          minutes: a.minutes || 0,
-          image: a.imageDataUrl ? "" : (a.image || ""),
-          content: a.content
-        };
-      })
-    };
-    var text = JSON.stringify(out, null, 2);
+  function buildGitCommands() {
+    return "cd /d C:\\Users\\user\\Projects\\class-tool\r\n" +
+      "git add .\r\n" +
+      "git commit -m \"Update class tool\"\r\n" +
+      "git push origin main";
+  }
+
+  function copyGitCommands() {
+    var text = buildGitCommands();
+    function onCopied() {
+      els.saveToast.textContent = T.cmdCopied;
+      els.saveToast.hidden = false;
+      clearTimeout(copyGitCommands._timer);
+      copyGitCommands._timer = setTimeout(function () {
+        els.saveToast.hidden = true;
+      }, 3500);
+    }
     if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(text).then(function () {
-        alert(T.exportOk);
-      }).catch(function () {
-        prompt("activities.json", text);
+      navigator.clipboard.writeText(text).then(onCopied).catch(function () {
+        window.prompt("PC CMD", text);
+        onCopied();
       });
     } else {
-      prompt("activities.json", text);
+      window.prompt("PC CMD", text);
+      onCopied();
     }
   }
 
@@ -1196,20 +1195,6 @@
       return true;
     }
     return false;
-  }
-
-  function reloadFromGitHub() {
-    if (!confirm(T.reloadConfirm)) return;
-    fetchActivitiesJson()
-      .then(function (data) {
-        if (applyActivitiesData(data, function () {
-          selectActivity(state.activeId);
-        })) return;
-        throw new Error("empty");
-      })
-      .catch(function () {
-        alert("activities.json\uC744 \uBD88\uB7EC\uC62C \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.\nPC\uC5D0\uC11C git push\uB85C \uC62C\uB9AC\uACE0, \uC6F9\uC5D0 \uBD99\uC5EC\uB123\uC9C0 \uB9C8\uC138\uC694.");
-      });
   }
 
   function save() {
@@ -1279,8 +1264,7 @@
   els.saveActivityBtn.addEventListener("click", saveActivity);
   els.newActivityBtn.addEventListener("click", newActivity);
   els.deleteActivityBtn.addEventListener("click", deleteActivity);
-  els.exportJsonBtn.addEventListener("click", exportForGitHub);
-  els.reloadJsonBtn.addEventListener("click", reloadFromGitHub);
+  els.copyCmdBtn.addEventListener("click", copyGitCommands);
   els.startBtn.addEventListener("click", start);
   els.pauseBtn.addEventListener("click", pause);
   els.resetBtn.addEventListener("click", reset);
