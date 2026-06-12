@@ -104,9 +104,12 @@
       display: grid; gap: 18px; margin-bottom: 20px;
       grid-template-columns: 1fr; align-items: stretch;
     }
-    .stage.layout-split { grid-template-columns: 1.15fr 0.85fr; }
-    .stage.layout-text-timer { grid-template-columns: 1fr 1fr; }
-    .stage.layout-triple { grid-template-columns: 1.1fr 0.95fr 0.85fr; }
+    .stage.layout-duo { grid-template-columns: repeat(2, 1fr); }
+    .stage.layout-text-timer { grid-template-columns: repeat(2, 1fr); }
+    .stage.layout-triple { grid-template-columns: repeat(3, 1fr); }
+    .stage.layout-duo > *,
+    .stage.layout-text-timer > *,
+    .stage.layout-triple > * { min-width: 0; }
     .stage.layout-timer { max-width: 640px; margin-left: auto; margin-right: auto; }
     .image-panel[hidden], .text-panel[hidden], .timer-panel[hidden] { display: none !important; }
 
@@ -119,6 +122,26 @@
       max-width: 100%; max-height: min(62vh, 560px);
       object-fit: contain; border-radius: 12px;
     }
+    .layout-duo .image-panel,
+    .layout-triple .image-panel {
+      min-height: 320px; padding: 12px;
+      background: rgba(255,255,255,0.97);
+    }
+    .layout-duo .image-panel img,
+    .layout-triple .image-panel img {
+      width: 100%; max-height: min(52vh, 480px);
+    }
+    .layout-duo .timer-panel,
+    .layout-text-timer .timer-panel,
+    .layout-triple .timer-panel {
+      width: 100%; min-height: 320px; margin: 0;
+    }
+    .layout-duo .timer-ring,
+    .layout-text-timer .timer-ring,
+    .layout-triple .timer-ring { width: min(100%, 300px); }
+    .layout-duo .timer-actions,
+    .layout-text-timer .timer-actions,
+    .layout-triple .timer-actions { max-width: 100%; width: 100%; }
 
     .text-panel {
       background: linear-gradient(180deg, #1e293b 0%, #111827 100%);
@@ -136,9 +159,6 @@
     .text-line { display: block; line-height: 1.35; }
     .text-line + .text-line { margin-top: 0.28em; }
     .display-text { font-family: var(--display-font, "Malgun Gothic", sans-serif); }
-    .layout-text-timer .timer-ring,
-    .layout-triple .timer-ring { width: min(100%, 280px); }
-
     .timer-panel {
       background: linear-gradient(180deg, #1e293b 0%, #111827 100%);
       border: 1px solid var(--line); border-radius: 28px;
@@ -240,17 +260,17 @@
     body.present .hero { flex-shrink: 0; margin-bottom: 14px; }
     body.present .announcement-title { font-size: clamp(2rem, 5vw, 3rem); }
     body.present .stage { flex: 1; margin-bottom: 0; align-content: center; }
-    body.present .layout-split { grid-template-columns: 1fr 380px; }
-    body.present .layout-text-timer { grid-template-columns: 1fr 400px; }
-    body.present .layout-triple { grid-template-columns: 1fr 0.9fr 380px; }
+    body.present .layout-duo,
+    body.present .layout-text-timer { grid-template-columns: repeat(2, 1fr); }
+    body.present .layout-triple { grid-template-columns: repeat(3, 1fr); }
     body.present .image-panel { min-height: 0; }
     body.present .image-panel img { max-height: min(52vh, 520px); }
     body.present .timer-panel { min-height: 0; justify-content: center; }
     body.present .timer-actions { max-width: none; }
 
     @media (max-width: 900px) {
-      .stage.layout-split, .stage.layout-text-timer, .stage.layout-triple,
-      body.present .layout-split, body.present .layout-text-timer, body.present .layout-triple {
+      .stage.layout-duo, .stage.layout-text-timer, .stage.layout-triple,
+      body.present .layout-duo, body.present .layout-text-timer, body.present .layout-triple {
         grid-template-columns: 1fr;
       }
       .activity-chip { flex: 0 0 150px; max-width: none; }
@@ -800,7 +820,7 @@
     if (hasImg && textInStage && hasTimer) {
       els.stage.classList.add("layout-triple");
     } else if (hasImg && hasTimer) {
-      els.stage.classList.add("layout-split");
+      els.stage.classList.add("layout-duo");
     } else if (textInStage && hasTimer) {
       els.stage.classList.add("layout-text-timer");
     } else if (hasTimer) {
@@ -899,18 +919,52 @@
     updateContentFieldsUI();
   }
 
-  function selectActivity(id) {
+  function resetTimerForActivity(activity) {
     stopTick();
     state.running = false;
     state.paused = false;
-    state.activeId = id;
-    var activity = getActive();
     state.remainingMs = minutesToMs(activity && activity.minutes ? activity.minutes : 0);
     setLabel(T.ready);
+  }
+
+  function captureTimerState() {
+    return {
+      running: state.running,
+      paused: state.paused,
+      remainingMs: state.remainingMs,
+      endTime: state.endTime
+    };
+  }
+
+  function restoreTimerState(snap) {
+    stopTick();
+    state.running = snap.running;
+    state.paused = snap.paused;
+    state.remainingMs = snap.remainingMs;
+    if (snap.running && !snap.paused) {
+      state.endTime = Date.now() + snap.remainingMs;
+      state.tickId = setInterval(onTick, 200);
+      setLabel(T.running, "running");
+    } else if (snap.paused) {
+      state.endTime = snap.endTime;
+      setLabel(T.paused);
+    } else {
+      setLabel(T.ready);
+    }
+  }
+
+  function refreshActivityView() {
+    var activity = getActive();
     loadEditor(activity);
     renderActivityBar();
     updateDisplay();
     save();
+  }
+
+  function selectActivity(id) {
+    state.activeId = id;
+    resetTimerForActivity(getActive());
+    refreshActivityView();
   }
 
   function onTick() {
@@ -978,6 +1032,12 @@
     if (!content.image && !content.text && !content.timer) { alert(T.needContent); return; }
     if (content.text && !readSubText()) { alert(T.needText); return; }
     if (content.timer && (!minutes || minutes < 1)) { alert(T.needMinutes); return; }
+
+    var savingId = state.editingId;
+    var isSameActive = !!savingId && savingId === state.activeId;
+    var oldMinutes = isSameActive && getActive() ? getActive().minutes : null;
+    var timerSnap = isSameActive ? captureTimerState() : null;
+
     var payload = {
       category: els.editCategory.value,
       name: name,
@@ -1005,7 +1065,16 @@
       state.activeId = created.id;
       state.editingId = created.id;
     }
-    selectActivity(state.editingId || state.activeId);
+
+    state.activeId = state.editingId || state.activeId;
+    var activity = getActive();
+    if (timerSnap && oldMinutes === activity.minutes) {
+      restoreTimerState(timerSnap);
+    } else {
+      resetTimerForActivity(activity);
+    }
+
+    refreshActivityView();
     showSaveToast();
   }
 
