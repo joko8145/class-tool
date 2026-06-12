@@ -484,7 +484,8 @@
     reviewSub: "\uBBF8\uC801\uBD84 \uC624\uB2F5 \uBD84\uC11D \uB8E8\uD2F4"
   };
 
-  var STORAGE_KEY = "class-tool-v8";
+  var STORAGE_KEY = "class-tool-v9";
+  var IMAGE_CACHE_VER = "3";
 
   var FONT_MAP = {
     malgun: "\"Malgun Gothic\", \"Apple SD Gothic Neo\", sans-serif",
@@ -678,7 +679,11 @@
   function getImageSrc(activity) {
     if (!activity) return "";
     if (activity.imageDataUrl) return activity.imageDataUrl;
-    if (activity.image) return activity.image;
+    if (activity.image) {
+      var src = activity.image;
+      if (src.indexOf("?") < 0) src += "?v=" + IMAGE_CACHE_VER;
+      return src;
+    }
     return "";
   }
 
@@ -712,6 +717,7 @@
     }
     if (!a.category) a.category = "other";
     if (!a.fontKey) a.fontKey = "malgun";
+    if (a.image === "images/rules.png") a.image = "images/solve.png";
     a.sub = normalizeSubText(a.sub);
     a.minutes = Number(a.minutes) || 0;
     return a;
