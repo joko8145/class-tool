@@ -6,124 +6,187 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
-  <meta name="theme-color" content="#1a365d">
+  <meta name="theme-color" content="#111827">
   <title>Class Tool</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; }
     :root {
-      --bg: #0f1c2e; --surface: #1a365d; --surface-light: #234876;
-      --text: #f7fafc; --muted: #a0aec0; --accent: #63b3ed;
-      --accent-strong: #3182ce; --ok: #68d391; --danger: #fc8181;
+      --bg: #0b1020; --bg-soft: #111827;
+      --card: #ffffff; --card-dark: #1e293b;
+      --text: #f8fafc; --text-dark: #0f172a;
+      --muted: #94a3b8; --line: rgba(255,255,255,0.1);
+      --accent: #3b82f6; --accent-soft: #60a5fa;
+      --ok: #22c55e; --danger: #ef4444;
+      --shadow: 0 20px 50px rgba(0,0,0,0.28);
     }
     html, body {
       margin: 0; min-height: 100%;
       font-family: "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
-      background: linear-gradient(160deg, #1a365d 0%, var(--bg) 55%);
+      background: radial-gradient(ellipse 120% 80% at 50% -10%, #1e3a5f 0%, var(--bg) 55%);
       color: var(--text);
     }
     body { min-height: 100dvh; }
-    .app { max-width: 1200px; margin: 0 auto; padding: 16px 20px 32px; }
-    .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-    .app-name { font-size: 1.1rem; color: var(--muted); }
+    .app { max-width: 1180px; margin: 0 auto; padding: 18px 20px 36px; }
+    .top-bar {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 16px; gap: 12px;
+    }
+    .app-name { font-size: 1rem; color: var(--muted); letter-spacing: 0.02em; }
     .btn {
-      border: none; border-radius: 12px; padding: 12px 18px;
-      font-size: 1rem; font-weight: 600; cursor: pointer;
-      background: var(--surface-light); color: var(--text); font-family: inherit;
+      border: none; border-radius: 14px; padding: 13px 22px;
+      font-size: 1rem; font-weight: 700; cursor: pointer;
+      background: var(--card-dark); color: var(--text); font-family: inherit;
+      transition: transform 0.15s, opacity 0.15s;
     }
-    .btn.primary { background: var(--accent-strong); }
-    .btn.danger { background: rgba(252,129,129,0.25); color: #fed7d7; }
+    .btn:active { transform: scale(0.98); }
+    .btn.primary { background: linear-gradient(135deg, #2563eb, #3b82f6); color: #fff; }
+    .btn.danger { background: rgba(239,68,68,0.18); color: #fecaca; }
     .btn.small { padding: 8px 12px; font-size: 0.9rem; }
-    .btn.icon-btn { background: var(--accent-strong); }
-    .activity-bar { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 12px; }
+    .btn.icon-btn { background: linear-gradient(135deg, #2563eb, #3b82f6); color: #fff; }
+
+    .activity-bar {
+      display: flex; gap: 8px; overflow-x: auto; padding: 4px 2px 12px;
+      margin-bottom: 14px; scrollbar-width: thin;
+    }
     .activity-chip {
-      flex: 0 0 auto; border: 2px solid rgba(255,255,255,0.15);
-      background: rgba(255,255,255,0.06); color: var(--text);
-      border-radius: 14px; padding: 12px 16px; cursor: pointer;
-      text-align: left; min-width: 130px; font-family: inherit;
+      flex: 1 0 140px; max-width: 200px;
+      border: 1px solid var(--line); background: rgba(255,255,255,0.04);
+      color: var(--text); border-radius: 16px; padding: 12px 14px;
+      cursor: pointer; text-align: left; font-family: inherit;
+      display: flex; align-items: flex-start; gap: 10px;
+      transition: border-color 0.15s, background 0.15s;
     }
-    .activity-chip strong { display: block; font-size: 1rem; margin-bottom: 4px; }
-    .activity-chip span { font-size: 0.9rem; color: var(--muted); }
-    .activity-chip.active { border-color: var(--accent); background: rgba(99,179,237,0.18); }
-    .announcement {
-      background: var(--surface); border-radius: 16px;
-      padding: 18px 24px; margin-bottom: 16px; text-align: center;
+    .activity-chip .step {
+      flex-shrink: 0; width: 28px; height: 28px; border-radius: 999px;
+      display: grid; place-items: center; font-size: 0.85rem; font-weight: 800;
+      background: rgba(255,255,255,0.08); color: var(--muted);
     }
-    .announcement-title { margin: 0; font-size: clamp(1.6rem, 4vw, 2.4rem); }
-    .announcement-sub { margin: 8px 0 0; font-size: clamp(1rem, 2.5vw, 1.3rem); color: #cbd5e0; white-space: pre-wrap; line-height: 1.5; }
+    .activity-chip .chip-body { min-width: 0; }
+    .activity-chip strong {
+      display: block; font-size: 0.95rem; margin-bottom: 2px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .activity-chip span { font-size: 0.8rem; color: var(--muted); }
+    .activity-chip.active {
+      border-color: var(--accent-soft);
+      background: rgba(59,130,246,0.16);
+      box-shadow: inset 0 0 0 1px rgba(96,165,250,0.25);
+    }
+    .activity-chip.active .step { background: var(--accent); color: #fff; }
+
+    .hero {
+      text-align: center; margin-bottom: 18px; padding: 0 8px;
+    }
+    .hero-eyebrow {
+      margin: 0 0 8px; font-size: 0.9rem; font-weight: 700;
+      letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent-soft);
+    }
+    .hero-eyebrow:empty { display: none; }
+    .announcement-title {
+      margin: 0; font-size: clamp(1.8rem, 4.5vw, 2.8rem);
+      font-weight: 800; line-height: 1.2;
+    }
+    .announcement-sub {
+      margin: 12px auto 0; max-width: 720px;
+      font-size: clamp(1.05rem, 2.4vw, 1.35rem);
+      color: #cbd5e1; white-space: pre-wrap; line-height: 1.65;
+    }
     .announcement-sub:empty { display: none; }
-    #nextBtn { margin-top: 14px; }
-    .stage { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 16px; margin-bottom: 20px; }
-    .stage.timer-only { grid-template-columns: 1fr; }
-    .stage.timer-only .timer-panel { width: min(100%, 560px); margin: 0 auto; }
-    .stage.mode-message.has-image { grid-template-columns: 1fr; }
-    .image-panel[hidden], .timer-panel[hidden] { display: none !important; }
-    .image-panel, .timer-panel {
-      background: var(--surface); border-radius: 20px; padding: 20px; min-height: 340px;
+
+    .stage {
+      display: grid; gap: 18px; margin-bottom: 20px;
+      grid-template-columns: 1fr; align-items: stretch;
     }
-    .image-panel { display: flex; align-items: center; justify-content: center; overflow: hidden; }
-    .image-panel img { max-width: 100%; max-height: 520px; object-fit: contain; border-radius: 12px; }
-    .image-empty {
-      text-align: center; color: var(--muted); font-size: 1.05rem;
-      padding: 24px; border: 2px dashed rgba(255,255,255,0.15); border-radius: 12px; width: 100%;
+    .stage.layout-split { grid-template-columns: 1.15fr 0.85fr; }
+    .stage.layout-timer { max-width: 640px; margin-left: auto; margin-right: auto; }
+    .image-panel[hidden], .timer-panel[hidden], .stage-footer[hidden] { display: none !important; }
+
+    .image-panel {
+      background: var(--card); border-radius: 24px; padding: 16px;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: var(--shadow); min-height: 280px;
     }
+    .image-panel img {
+      max-width: 100%; max-height: min(62vh, 560px);
+      object-fit: contain; border-radius: 12px;
+    }
+
     .timer-panel {
-      display: flex; flex-direction: column; align-items: center;
-      justify-content: flex-start; gap: 12px;
-      padding-top: 20px; padding-bottom: 20px;
+      background: linear-gradient(180deg, #1e293b 0%, #111827 100%);
+      border: 1px solid var(--line); border-radius: 28px;
+      padding: 28px 24px 24px; box-shadow: var(--shadow);
+      display: flex; flex-direction: column; align-items: center; gap: 20px;
+      min-height: 320px;
     }
+    .timer-ring {
+      width: min(100%, 360px); aspect-ratio: 1; border-radius: 50%;
+      display: grid; place-items: center;
+      background: radial-gradient(circle at 50% 35%, rgba(59,130,246,0.18), transparent 65%);
+      border: 3px solid rgba(96,165,250,0.35);
+    }
+    .timer-core { text-align: center; }
     .activity-badge {
-      font-size: 1.3rem; font-weight: 700; color: var(--accent);
-      background: rgba(99,179,237,0.15); padding: 8px 18px; border-radius: 999px;
-    }
-    .message-box {
-      font-size: clamp(2rem, 6vw, 3.5rem); font-weight: 800;
-      text-align: center; line-height: 1.3; color: #fed7d7;
-    }
-    .message-desc {
-      font-size: clamp(1rem, 2.5vw, 1.3rem); color: var(--muted);
-      text-align: center; max-width: 520px; line-height: 1.6;
+      display: inline-block; margin-bottom: 10px;
+      font-size: 1rem; font-weight: 700; color: #bfdbfe;
+      background: rgba(59,130,246,0.2); padding: 6px 14px; border-radius: 999px;
     }
     .timer-face {
-      font-size: clamp(4.5rem, 15vw, 7rem); font-weight: 800;
-      font-variant-numeric: tabular-nums; line-height: 1;
+      font-size: clamp(3.5rem, 14vw, 5.5rem); font-weight: 800;
+      font-variant-numeric: tabular-nums; line-height: 1; letter-spacing: -0.02em;
     }
-    .timer-label { font-size: 1.2rem; color: var(--muted); }
+    .timer-label { margin-top: 8px; font-size: 1.05rem; color: var(--muted); }
     .timer-panel.running .timer-face { color: var(--ok); }
+    .timer-panel.running .timer-ring { border-color: rgba(34,197,94,0.55); }
     .timer-panel.finished .timer-face { color: var(--danger); }
+    .timer-panel.finished .timer-ring { border-color: rgba(239,68,68,0.55); }
+
     .timer-actions {
-      display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;
-      margin-top: auto; flex-shrink: 0; width: 100%; padding-top: 12px;
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+      width: 100%; max-width: 420px;
     }
-    .settings { background: var(--surface); border-radius: 16px; padding: 20px 24px; }
+    .timer-actions .btn {
+      padding: 16px 10px; font-size: 1.05rem; border-radius: 16px;
+    }
+    .timer-actions .btn.primary { grid-column: span 1; }
+
+    .stage-footer { display: flex; justify-content: center; padding: 8px 0 4px; }
+    .next-btn {
+      min-width: min(100%, 360px); padding: 18px 28px;
+      font-size: 1.15rem; border-radius: 18px;
+    }
+
+    .settings {
+      background: rgba(255,255,255,0.04); border: 1px solid var(--line);
+      border-radius: 20px; padding: 22px 24px;
+    }
     .settings h2 { margin: 0 0 8px; font-size: 1.2rem; }
     .field { margin-bottom: 14px; }
     .field.row { display: flex; gap: 12px; align-items: end; flex-wrap: wrap; }
     label { display: block; margin-bottom: 6px; color: var(--muted); font-size: 0.95rem; }
-    input[type="text"], input[type="number"], input[type="file"], select {
+    input[type="text"], input[type="number"], input[type="file"], select, textarea {
       width: 100%; padding: 12px 14px;
-      border: 1px solid rgba(255,255,255,0.15); border-radius: 10px;
-      background: rgba(15,28,46,0.7); color: var(--text);
+      border: 1px solid rgba(255,255,255,0.12); border-radius: 12px;
+      background: rgba(15,23,42,0.75); color: var(--text);
       font-size: 1rem; font-family: inherit;
     }
     .field.row input[type="number"], .field.row select { width: 160px; }
-    .content-checks { display: flex; flex-wrap: wrap; gap: 10px 18px; }
+    .content-checks { display: flex; flex-wrap: wrap; gap: 10px; }
     .check-label {
       display: inline-flex; align-items: center; gap: 8px;
       color: var(--text); font-size: 1rem; cursor: pointer;
-      padding: 10px 14px; border-radius: 10px;
-      background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12);
+      padding: 11px 15px; border-radius: 12px;
+      background: rgba(255,255,255,0.04); border: 1px solid var(--line);
     }
     .check-label input { width: auto; margin: 0; accent-color: var(--accent); }
-    .check-label:has(input:checked) { border-color: var(--accent); background: rgba(99,179,237,0.15); }
+    .check-label:has(input:checked) { border-color: var(--accent-soft); background: rgba(59,130,246,0.14); }
     .content-panel {
-      margin-top: 4px; padding: 14px 16px;
-      border-radius: 12px; background: rgba(15,28,46,0.45);
-      border: 1px solid rgba(255,255,255,0.08);
+      margin-top: 4px; padding: 14px 16px; border-radius: 14px;
+      background: rgba(15,23,42,0.55); border: 1px solid var(--line);
     }
     .content-panel[hidden] { display: none !important; }
     .save-toast {
       margin-top: 10px; padding: 10px 14px; border-radius: 10px;
-      background: rgba(104,211,145,0.2); color: #c6f6d5; font-size: 0.95rem;
+      background: rgba(34,197,94,0.18); color: #bbf7d0; font-size: 0.95rem;
     }
     .save-toast[hidden] { display: none !important; }
     .thumb-row { display: flex; align-items: center; gap: 12px; margin-top: 10px; }
@@ -131,30 +194,37 @@
     .settings-actions { display: flex; flex-wrap: wrap; gap: 10px; }
     .hint { margin: 0; font-size: 0.9rem; color: var(--muted); }
     .hint.top { margin-bottom: 16px; }
+
     .exit-present {
-      position: fixed; top: 16px; right: 16px; z-index: 100;
-      border: none; border-radius: 999px; padding: 12px 18px;
-      background: rgba(0,0,0,0.55); color: white; font-size: 1rem;
-      cursor: pointer; font-family: inherit;
+      position: fixed; top: 14px; right: 14px; z-index: 100;
+      border: 1px solid var(--line); border-radius: 999px; padding: 11px 16px;
+      background: rgba(17,24,39,0.82); color: white; font-size: 0.95rem;
+      cursor: pointer; font-family: inherit; backdrop-filter: blur(8px);
     }
+
+    body.present { background: #0a0f1a; }
     body.present .top-bar, body.present .settings { display: none; }
-    body.present .app { max-width: none; padding: 20px 24px; }
-    body.present .announcement-title { font-size: clamp(2rem, 5vw, 3rem); }
-    body.present .stage { min-height: calc(100dvh - 200px); align-items: stretch; }
-    body.present .image-panel, body.present .timer-panel { min-height: 300px; }
-    body.present .image-panel img { max-height: 58vh; }
-    body.present .timer-face { font-size: clamp(3rem, 11vw, 5.5rem); }
-    body.present .timer-actions {
-      position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
-      z-index: 90; width: auto; margin-top: 0; padding: 12px 18px;
-      background: rgba(15,28,46,0.92); border-radius: 999px;
-      border: 1px solid rgba(255,255,255,0.15);
-      box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+    body.present .app {
+      max-width: none; min-height: 100dvh; padding: 16px 20px 24px;
+      display: flex; flex-direction: column;
     }
-    body.present .timer-actions .btn { padding: 14px 22px; font-size: 1.05rem; }
+    body.present .activity-bar { flex-shrink: 0; margin-bottom: 10px; }
+    body.present .activity-chip { flex: 1 0 0; max-width: none; padding: 10px 12px; }
+    body.present .activity-chip strong { font-size: 0.88rem; }
+    body.present .hero { flex-shrink: 0; margin-bottom: 14px; }
+    body.present .announcement-title { font-size: clamp(2rem, 5vw, 3rem); }
+    body.present .stage { flex: 1; margin-bottom: 0; align-content: center; }
+    body.present .layout-split { grid-template-columns: 1fr 380px; }
+    body.present .image-panel { min-height: 0; }
+    body.present .image-panel img { max-height: min(52vh, 520px); }
+    body.present .timer-panel { min-height: 0; justify-content: center; }
+    body.present .timer-actions { max-width: none; }
+
     @media (max-width: 900px) {
-      .stage { grid-template-columns: 1fr; }
-      .image-panel, .timer-panel { min-height: 260px; }
+      .stage.layout-split, body.present .layout-split { grid-template-columns: 1fr; }
+      .activity-chip { flex: 0 0 150px; max-width: none; }
+      .timer-actions { grid-template-columns: 1fr; }
+      .timer-actions .btn.primary { grid-column: span 1; }
     }
   </style>
 </head>
@@ -167,10 +237,10 @@
 
     <section class="activity-bar" id="activityBar"></section>
 
-    <section class="announcement">
+    <section class="hero" id="heroHeader">
+      <p class="hero-eyebrow" id="heroEyebrow"></p>
       <h1 class="announcement-title" id="announcementTitle"></h1>
       <p class="announcement-sub" id="announcementSub"></p>
-      <button type="button" class="btn primary" id="nextBtn" hidden></button>
     </section>
 
     <main class="stage" id="stage">
@@ -178,10 +248,14 @@
         <img id="displayImage" alt="">
       </div>
 
-      <div class="timer-panel" id="timerPanel">
-        <div class="activity-badge" id="activityBadge"></div>
-        <div class="timer-face" id="timerFace">00:00</div>
-        <div class="timer-label" id="timerLabel"></div>
+      <div class="timer-panel" id="timerPanel" hidden>
+        <div class="timer-ring">
+          <div class="timer-core">
+            <div class="activity-badge" id="activityBadge"></div>
+            <div class="timer-face" id="timerFace">00:00</div>
+            <div class="timer-label" id="timerLabel"></div>
+          </div>
+        </div>
         <div class="timer-actions">
           <button type="button" class="btn primary" id="startBtn"></button>
           <button type="button" class="btn" id="pauseBtn"></button>
@@ -189,6 +263,9 @@
         </div>
       </div>
 
+      <div class="stage-footer" id="stageFooter" hidden>
+        <button type="button" class="btn primary next-btn" id="nextBtn"></button>
+      </div>
     </main>
 
     <section class="settings" id="settings">
@@ -353,9 +430,11 @@
     presentBtn: document.getElementById("presentBtn"),
     exitPresentBtn: document.getElementById("exitPresentBtn"),
     activityBar: document.getElementById("activityBar"),
+    heroEyebrow: document.getElementById("heroEyebrow"),
     announcementTitle: document.getElementById("announcementTitle"),
     announcementSub: document.getElementById("announcementSub"),
     stage: document.getElementById("stage"),
+    stageFooter: document.getElementById("stageFooter"),
     imagePanel: document.getElementById("imagePanel"),
     displayImage: document.getElementById("displayImage"),
     timerPanel: document.getElementById("timerPanel"),
@@ -560,6 +639,7 @@
     if (!activity) return;
     var content = getContent(activity);
 
+    els.heroEyebrow.textContent = categoryLabel(activity.category);
     els.announcementTitle.textContent = activity.name;
     els.announcementSub.textContent = content.text ? (activity.sub || "") : "";
 
@@ -573,34 +653,43 @@
     }
 
     els.stage.className = "stage";
+    if (content.timer && imgSrc) {
+      els.stage.classList.add("layout-split");
+    } else if (content.timer) {
+      els.stage.classList.add("layout-timer");
+    }
+
     if (content.timer) {
-      els.stage.classList.add("mode-timer");
-      if (!imgSrc) els.stage.classList.add("timer-only");
       els.timerPanel.hidden = false;
-      els.nextBtn.hidden = true;
+      els.stageFooter.hidden = true;
       els.activityBadge.textContent = activity.minutes + T.minSuffix;
       els.timerFace.textContent = formatTime(state.remainingMs);
     } else {
-      els.stage.classList.add("mode-message");
-      if (imgSrc) els.stage.classList.add("has-image");
       els.timerPanel.hidden = true;
-      els.nextBtn.hidden = false;
+      els.stageFooter.hidden = false;
     }
   }
 
   function renderActivityBar() {
     els.activityBar.innerHTML = "";
-    state.activities.forEach(function (activity) {
+    state.activities.forEach(function (activity, index) {
       var btn = document.createElement("button");
       btn.type = "button";
       btn.className = "activity-chip" + (activity.id === state.activeId ? " active" : "");
+      var step = document.createElement("span");
+      step.className = "step";
+      step.textContent = String(index + 1);
+      var body = document.createElement("span");
+      body.className = "chip-body";
       var strong = document.createElement("strong");
       strong.textContent = activity.name;
       var span = document.createElement("span");
       var c = getContent(activity);
       span.textContent = c.timer ? activity.minutes + T.minSuffix : categoryLabel(activity.category);
-      btn.appendChild(strong);
-      btn.appendChild(span);
+      body.appendChild(strong);
+      body.appendChild(span);
+      btn.appendChild(step);
+      btn.appendChild(body);
       btn.addEventListener("click", function () { selectActivity(activity.id); });
       els.activityBar.appendChild(btn);
     });
