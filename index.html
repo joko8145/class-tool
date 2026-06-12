@@ -8,6 +8,9 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#111827">
   <title>Class Tool</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;800&display=swap">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/moonspam/NanumSquare@master/nanumsquare.css">
   <style>
     *, *::before, *::after { box-sizing: border-box; }
     :root {
@@ -81,16 +84,20 @@
       margin: 0 0 8px; font-size: 0.9rem; font-weight: 700;
       letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent-soft);
     }
-    .hero-eyebrow:empty { display: none; }
+    .hero-eyebrow:empty, .hero-eyebrow[hidden], .announcement-title[hidden] { display: none !important; }
+    .hero.compact { margin-bottom: 10px; }
+    .hero[hidden] { display: none !important; }
     .announcement-title {
       margin: 0; font-size: clamp(1.8rem, 4.5vw, 2.8rem);
       font-weight: 800; line-height: 1.2;
     }
+    .announcement-title.display-text { font-family: var(--display-font, "Malgun Gothic", sans-serif); }
     .announcement-sub {
       margin: 12px auto 0; max-width: 720px;
       font-size: clamp(1.05rem, 2.4vw, 1.35rem);
-      color: #cbd5e1; white-space: pre-wrap; line-height: 1.65;
+      color: #cbd5e1; line-height: 1.65;
     }
+    .announcement-sub.display-text { font-size: clamp(2rem, 8vw, 3.5rem); font-weight: 800; color: #f8fafc; }
     .announcement-sub:empty { display: none; }
 
     .stage {
@@ -98,8 +105,10 @@
       grid-template-columns: 1fr; align-items: stretch;
     }
     .stage.layout-split { grid-template-columns: 1.15fr 0.85fr; }
+    .stage.layout-text-timer { grid-template-columns: 1fr 1fr; }
+    .stage.layout-triple { grid-template-columns: 1.1fr 0.95fr 0.85fr; }
     .stage.layout-timer { max-width: 640px; margin-left: auto; margin-right: auto; }
-    .image-panel[hidden], .timer-panel[hidden], .stage-footer[hidden] { display: none !important; }
+    .image-panel[hidden], .text-panel[hidden], .timer-panel[hidden] { display: none !important; }
 
     .image-panel {
       background: var(--card); border-radius: 24px; padding: 16px;
@@ -110,6 +119,25 @@
       max-width: 100%; max-height: min(62vh, 560px);
       object-fit: contain; border-radius: 12px;
     }
+
+    .text-panel {
+      background: linear-gradient(180deg, #1e293b 0%, #111827 100%);
+      border: 1px solid var(--line); border-radius: 28px;
+      padding: 28px 24px; box-shadow: var(--shadow);
+      display: flex; align-items: center; justify-content: center;
+      min-height: 320px;
+    }
+    .text-panel-body {
+      margin: 0; width: 100%;
+      font-size: clamp(2.2rem, 9vw, 4.2rem);
+      font-weight: 800; color: #f8fafc;
+      text-align: center; letter-spacing: -0.02em;
+    }
+    .text-line { display: block; line-height: 1.35; }
+    .text-line + .text-line { margin-top: 0.28em; }
+    .display-text { font-family: var(--display-font, "Malgun Gothic", sans-serif); }
+    .layout-text-timer .timer-ring,
+    .layout-triple .timer-ring { width: min(100%, 280px); }
 
     .timer-panel {
       background: linear-gradient(180deg, #1e293b 0%, #111827 100%);
@@ -125,11 +153,7 @@
       border: 3px solid rgba(96,165,250,0.35);
     }
     .timer-core { text-align: center; }
-    .activity-badge {
-      display: inline-block; margin-bottom: 10px;
-      font-size: 1rem; font-weight: 700; color: #bfdbfe;
-      background: rgba(59,130,246,0.2); padding: 6px 14px; border-radius: 999px;
-    }
+    .activity-badge { display: none; }
     .timer-face {
       font-size: clamp(3.5rem, 14vw, 5.5rem); font-weight: 800;
       font-variant-numeric: tabular-nums; line-height: 1; letter-spacing: -0.02em;
@@ -148,12 +172,6 @@
       padding: 16px 10px; font-size: 1.05rem; border-radius: 16px;
     }
     .timer-actions .btn.primary { grid-column: span 1; }
-
-    .stage-footer { display: flex; justify-content: center; padding: 8px 0 4px; }
-    .next-btn {
-      min-width: min(100%, 360px); padding: 18px 28px;
-      font-size: 1.15rem; border-radius: 18px;
-    }
 
     .settings {
       background: rgba(255,255,255,0.04); border: 1px solid var(--line);
@@ -223,13 +241,18 @@
     body.present .announcement-title { font-size: clamp(2rem, 5vw, 3rem); }
     body.present .stage { flex: 1; margin-bottom: 0; align-content: center; }
     body.present .layout-split { grid-template-columns: 1fr 380px; }
+    body.present .layout-text-timer { grid-template-columns: 1fr 400px; }
+    body.present .layout-triple { grid-template-columns: 1fr 0.9fr 380px; }
     body.present .image-panel { min-height: 0; }
     body.present .image-panel img { max-height: min(52vh, 520px); }
     body.present .timer-panel { min-height: 0; justify-content: center; }
     body.present .timer-actions { max-width: none; }
 
     @media (max-width: 900px) {
-      .stage.layout-split, body.present .layout-split { grid-template-columns: 1fr; }
+      .stage.layout-split, .stage.layout-text-timer, .stage.layout-triple,
+      body.present .layout-split, body.present .layout-text-timer, body.present .layout-triple {
+        grid-template-columns: 1fr;
+      }
       .activity-chip { flex: 0 0 150px; max-width: none; }
       .timer-actions { grid-template-columns: 1fr; }
       .timer-actions .btn.primary { grid-column: span 1; }
@@ -258,6 +281,10 @@
         <img id="displayImage" alt="">
       </div>
 
+      <div class="text-panel" id="textPanel" hidden>
+        <p class="text-panel-body" id="textPanelBody"></p>
+      </div>
+
       <div class="timer-panel" id="timerPanel" hidden>
         <div class="timer-ring">
           <div class="timer-core">
@@ -273,9 +300,6 @@
         </div>
       </div>
 
-      <div class="stage-footer" id="stageFooter" hidden>
-        <button type="button" class="btn primary next-btn" id="nextBtn"></button>
-      </div>
     </main>
 
     <section class="settings" id="settings">
@@ -323,7 +347,18 @@
         <div class="content-panel" id="textField" hidden>
           <div class="field">
             <label for="editSub" id="lblEditSub"></label>
-            <textarea id="editSub" rows="4" maxlength="300"></textarea>
+            <textarea id="editSub" rows="5" maxlength="300"></textarea>
+            <p class="hint" id="txtSubHint"></p>
+          </div>
+          <div class="field" style="margin-top:10px">
+            <label for="editFont" id="lblEditFont"></label>
+            <select id="editFont">
+              <option value="malgun" id="optFontMalgun"></option>
+              <option value="pretendard" id="optFontPretendard"></option>
+              <option value="noto" id="optFontNoto"></option>
+              <option value="nanum" id="optFontNanum"></option>
+              <option value="gothic" id="optFontGothic"></option>
+            </select>
           </div>
         </div>
 
@@ -358,7 +393,6 @@
     start: "\uC2DC\uC791",
     pause: "\uC77C\uC2DC\uC815\uC9C0",
     reset: "\uB9AC\uC14B",
-    next: "\uB2E4\uC74C \uD65C\uB3D9",
     settingsTitle: "\uD65C\uB3D9 \uB300\uC2DC\uBCF4\uB4DC",
     settingsHint: "1 \uD65C\uB3D9 \uC720\uD615 \u2192 2 \uC774\uB984 \u2192 3 \uD654\uBA74 \uAD6C\uC131 \uC120\uD0DD \u2192 4 \uCD5C\uC885 \uC800\uC7A5",
     lblCategory: "\uD65C\uB3D9 \uC720\uD615",
@@ -375,7 +409,14 @@
     chkText: "\uD14D\uC2A4\uD2B8",
     chkTimer: "\uD0C0\uC774\uBA38",
     lblSub: "\uD654\uBA74 \uD14D\uC2A4\uD2B8",
-    phSub: "\uC608: \uD734\uB300\uD3F0\u00B7\uD0DC\uBE14\uB9BF\uC740 \uC218\uC5C5 \uC2DC\uC791\uACFC \uB3D9\uC2DC\uC5D0 \uC81C\uCD9C",
+    phSub: "\uC608: \uD734\uB300\uD3F0 \uC81C\uCD9C (\uC5D4\uD130\uB85C \uC904\uBC14\uAFC8)",
+    subHint: "Enter \uD0A4\uB85C \uC904\uC744 \uB098\uB700\uC138\uC694.",
+    lblFont: "\uD654\uBA74 \uAE00\uAD04",
+    fontMalgun: "\uB9D1\uC740 \uACE0\uB515",
+    fontPretendard: "Pretendard",
+    fontNoto: "Noto Sans KR",
+    fontNanum: "\uB098\uB214\uC2A4\uD018\uC5B4",
+    fontGothic: "\uACE0\uB515(Arial)",
     lblMinutes: "\uD0C0\uC774\uBA38 \uC2DC\uAC04 (\uBD84)",
     lblImage: "\uC774\uBBF8\uC9C0 \uD30C\uC77C \uC120\uD0DD",
     clearImage: "\uC774\uBBF8\uC9C0 \uC81C\uAC70",
@@ -417,11 +458,19 @@
 
   var STORAGE_KEY = "class-tool-v8";
 
+  var FONT_MAP = {
+    malgun: "\"Malgun Gothic\", \"Apple SD Gothic Neo\", sans-serif",
+    pretendard: "Pretendard, -apple-system, BlinkMacSystemFont, sans-serif",
+    noto: "\"Noto Sans KR\", sans-serif",
+    nanum: "\"NanumSquare\", \"Nanum Square\", sans-serif",
+    gothic: "Arial, Helvetica, sans-serif"
+  };
+
   var CATEGORY_PRESETS = {
     "class-start": { name: T.detoxName, sub: T.detoxSub, minutes: 0, content: { image: true, text: true, timer: false } },
     solve: { name: T.solveName, sub: T.solveSub, minutes: 40, content: { image: true, text: true, timer: true } },
     review: { name: T.reviewName, sub: T.reviewSub, minutes: 30, content: { image: true, text: true, timer: true } },
-    assessment: { name: "\uC218\uD589\uD3C9\uAC00", sub: "\uD734\uB300\uD3F0 \uC81C\uCD9C, \uD559\uB144\u00B7\uC774\uB984 \uC791\uC131", minutes: 25, content: { image: false, text: true, timer: true } },
+    assessment: { name: "\uC218\uD589\uD3C9\uAC00", sub: "\uD734\uB300\uD3F0 \uC81C\uCD9C\n\uD559\uB144\u00B7\uC774\uB984 \uC791\uC131", minutes: 25, content: { image: false, text: true, timer: true } },
     notice: { name: "\uC548\uB0B4", sub: "", minutes: 0, content: { image: false, text: true, timer: false } },
     other: { name: "", sub: "", minutes: 40, content: { image: false, text: true, timer: false } }
   };
@@ -442,13 +491,15 @@
     presentBtn: document.getElementById("presentBtn"),
     exitPresentBtn: document.getElementById("exitPresentBtn"),
     activityBar: document.getElementById("activityBar"),
+    heroHeader: document.getElementById("heroHeader"),
     heroEyebrow: document.getElementById("heroEyebrow"),
     announcementTitle: document.getElementById("announcementTitle"),
     announcementSub: document.getElementById("announcementSub"),
     stage: document.getElementById("stage"),
-    stageFooter: document.getElementById("stageFooter"),
     imagePanel: document.getElementById("imagePanel"),
     displayImage: document.getElementById("displayImage"),
+    textPanel: document.getElementById("textPanel"),
+    textPanelBody: document.getElementById("textPanelBody"),
     timerPanel: document.getElementById("timerPanel"),
     activityBadge: document.getElementById("activityBadge"),
     timerFace: document.getElementById("timerFace"),
@@ -456,7 +507,6 @@
     startBtn: document.getElementById("startBtn"),
     pauseBtn: document.getElementById("pauseBtn"),
     resetBtn: document.getElementById("resetBtn"),
-    nextBtn: document.getElementById("nextBtn"),
     txtSettingsTitle: document.getElementById("txtSettingsTitle"),
     txtSettingsHint: document.getElementById("txtSettingsHint"),
     editCategory: document.getElementById("editCategory"),
@@ -482,6 +532,14 @@
     timerField: document.getElementById("timerField"),
     lblEditSub: document.getElementById("lblEditSub"),
     editSub: document.getElementById("editSub"),
+    txtSubHint: document.getElementById("txtSubHint"),
+    editFont: document.getElementById("editFont"),
+    lblEditFont: document.getElementById("lblEditFont"),
+    optFontMalgun: document.getElementById("optFontMalgun"),
+    optFontPretendard: document.getElementById("optFontPretendard"),
+    optFontNoto: document.getElementById("optFontNoto"),
+    optFontNanum: document.getElementById("optFontNanum"),
+    optFontGothic: document.getElementById("optFontGothic"),
     lblEditMinutes: document.getElementById("lblEditMinutes"),
     editMinutes: document.getElementById("editMinutes"),
     lblEditImage: document.getElementById("lblEditImage"),
@@ -508,7 +566,6 @@
     els.startBtn.textContent = T.start;
     els.pauseBtn.textContent = T.pause;
     els.resetBtn.textContent = T.reset;
-    els.nextBtn.textContent = T.next;
     els.txtSettingsTitle.textContent = T.settingsTitle;
     els.txtSettingsHint.textContent = T.settingsHint;
     els.lblEditCategory.textContent = T.lblCategory;
@@ -526,6 +583,13 @@
     els.lblChkTimer.textContent = T.chkTimer;
     els.lblEditSub.textContent = T.lblSub;
     els.editSub.placeholder = T.phSub;
+    els.txtSubHint.textContent = T.subHint;
+    els.lblEditFont.textContent = T.lblFont;
+    els.optFontMalgun.textContent = T.fontMalgun;
+    els.optFontPretendard.textContent = T.fontPretendard;
+    els.optFontNoto.textContent = T.fontNoto;
+    els.optFontNanum.textContent = T.fontNanum;
+    els.optFontGothic.textContent = T.fontGothic;
     els.lblEditMinutes.textContent = T.lblMinutes;
     els.lblEditImage.textContent = T.lblImage;
     els.clearEditImageBtn.textContent = T.clearImage;
@@ -535,6 +599,46 @@
     els.exportJsonBtn.textContent = T.exportJson;
     els.reloadJsonBtn.textContent = T.reloadJson;
     els.timerLabel.textContent = T.ready;
+  }
+
+  function normalizeSubText(text) {
+    return String(text || "").replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+  }
+
+  function readSubText() {
+    return normalizeSubText(els.editSub.value).replace(/^\n+|\n+$/g, "");
+  }
+
+  function escapeHtml(text) {
+    return String(text)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  function setMultilineDisplay(el, text) {
+    var lines = normalizeSubText(text).split("\n");
+    if (!lines.length || (lines.length === 1 && !lines[0])) {
+      el.innerHTML = "";
+      return;
+    }
+    el.innerHTML = lines.map(function (line) {
+      return "<span class=\"text-line\">" + escapeHtml(line) + "</span>";
+    }).join("");
+  }
+
+  function getFontFamily(fontKey) {
+    return FONT_MAP[fontKey] || FONT_MAP.malgun;
+  }
+
+  function applyDisplayFont(activity) {
+    var fontKey = (activity && activity.fontKey) || "malgun";
+    var family = getFontFamily(fontKey);
+    document.documentElement.style.setProperty("--display-font", family);
+    els.announcementTitle.classList.add("display-text");
+    els.textPanelBody.classList.add("display-text");
+    els.announcementSub.classList.toggle("display-text", !els.textPanel.hidden);
   }
 
   function getImageSrc(activity) {
@@ -553,7 +657,7 @@
       normalizeActivity({ id: uid(), category: "class-start", name: T.detoxName, sub: T.detoxSub, minutes: 0, image: "images/detox.png", content: { image: true, text: true, timer: false } }),
       normalizeActivity({ id: uid(), category: "solve", name: T.solveName, sub: T.solveSub, minutes: 40, image: "images/rules.png", content: { image: true, text: true, timer: true } }),
       normalizeActivity({ id: uid(), category: "review", name: T.reviewName, sub: T.reviewSub, minutes: 30, image: "images/review.png", content: { image: true, text: true, timer: true } }),
-      normalizeActivity({ id: uid(), category: "assessment", name: "\uC218\uD589\uD3C9\uAC00", sub: "\uD734\uB300\uD3F0 \uC81C\uCD9C, \uD559\uB144\u00B7\uC774\uB984 \uC791\uC131", minutes: 25, content: { image: false, text: true, timer: true } })
+      normalizeActivity({ id: uid(), category: "assessment", name: "\uC218\uD589\uD3C9\uAC00", sub: "\uD734\uB300\uD3F0 \uC81C\uCD9C\n\uD559\uB144\u00B7\uC774\uB984 \uC791\uC131", fontKey: "pretendard", minutes: 25, content: { image: false, text: true, timer: true } })
     ];
   }
 
@@ -573,6 +677,8 @@
       }
     }
     if (!a.category) a.category = "other";
+    if (!a.fontKey) a.fontKey = "malgun";
+    a.sub = normalizeSubText(a.sub);
     a.minutes = Number(a.minutes) || 0;
     return a;
   }
@@ -651,35 +757,61 @@
     var activity = getActive();
     if (!activity) return;
     var content = getContent(activity);
+    var eyebrow = categoryLabel(activity.category);
+    var subText = normalizeSubText(activity.sub).trim();
+    var hasImg = !!(content.image && getImageSrc(activity));
+    var hasTimer = !!content.timer;
+    var textInStage = !!(content.text && hasTimer && subText);
 
-    els.heroEyebrow.textContent = categoryLabel(activity.category);
-    els.announcementTitle.textContent = activity.name;
-    els.announcementSub.textContent = content.text ? (activity.sub || "") : "";
+    els.heroEyebrow.hidden = true;
 
-    var imgSrc = content.image ? getImageSrc(activity) : "";
-    if (imgSrc) {
+    var hideTitle = hasImg && !hasTimer;
+    els.announcementTitle.hidden = hideTitle;
+    els.announcementTitle.textContent = hideTitle ? "" : activity.name;
+    els.heroHeader.classList.toggle("compact", hideTitle);
+    applyDisplayFont(activity);
+
+    if (textInStage) {
+      els.textPanel.hidden = false;
+      setMultilineDisplay(els.textPanelBody, subText);
+      els.announcementSub.innerHTML = "";
+    } else {
+      els.textPanel.hidden = true;
+      els.textPanelBody.innerHTML = "";
+      if (content.text && subText) {
+        setMultilineDisplay(els.announcementSub, subText);
+      } else {
+        els.announcementSub.innerHTML = "";
+      }
+    }
+
+    var heroHasSub = !!(content.text && subText && !textInStage);
+    els.heroHeader.hidden = !(hideTitle ? heroHasSub : true);
+
+    if (hasImg) {
       els.imagePanel.hidden = false;
-      els.displayImage.src = imgSrc;
+      els.displayImage.src = getImageSrc(activity);
     } else {
       els.imagePanel.hidden = true;
       els.displayImage.removeAttribute("src");
     }
 
     els.stage.className = "stage";
-    if (content.timer && imgSrc) {
+    if (hasImg && textInStage && hasTimer) {
+      els.stage.classList.add("layout-triple");
+    } else if (hasImg && hasTimer) {
       els.stage.classList.add("layout-split");
-    } else if (content.timer) {
+    } else if (textInStage && hasTimer) {
+      els.stage.classList.add("layout-text-timer");
+    } else if (hasTimer) {
       els.stage.classList.add("layout-timer");
     }
 
-    if (content.timer) {
+    if (hasTimer) {
       els.timerPanel.hidden = false;
-      els.stageFooter.hidden = true;
-      els.activityBadge.textContent = activity.minutes + T.minSuffix;
       els.timerFace.textContent = formatTime(state.remainingMs);
     } else {
       els.timerPanel.hidden = true;
-      els.stageFooter.hidden = false;
     }
   }
 
@@ -754,6 +886,7 @@
     els.editCategory.value = activity.category || "other";
     els.editName.value = activity.name;
     els.editSub.value = activity.sub || "";
+    els.editFont.value = activity.fontKey || "malgun";
     els.editMinutes.value = activity.minutes || 40;
     els.chkImage.checked = !!activity.content.image;
     els.chkText.checked = !!activity.content.text;
@@ -778,16 +911,6 @@
     renderActivityBar();
     updateDisplay();
     save();
-  }
-
-  function goNextActivity() {
-    var idx = -1;
-    for (var i = 0; i < state.activities.length; i++) {
-      if (state.activities[i].id === state.activeId) { idx = i; break; }
-    }
-    if (idx >= 0 && idx < state.activities.length - 1) {
-      selectActivity(state.activities[idx + 1].id);
-    }
   }
 
   function onTick() {
@@ -853,12 +976,13 @@
     var minutes = content.timer ? Number(els.editMinutes.value) : 0;
     if (!name) { alert(T.needName); return; }
     if (!content.image && !content.text && !content.timer) { alert(T.needContent); return; }
-    if (content.text && !els.editSub.value.trim()) { alert(T.needText); return; }
+    if (content.text && !readSubText()) { alert(T.needText); return; }
     if (content.timer && (!minutes || minutes < 1)) { alert(T.needMinutes); return; }
     var payload = {
       category: els.editCategory.value,
       name: name,
-      sub: content.text ? els.editSub.value.trim() : "",
+      sub: content.text ? readSubText() : "",
+      fontKey: els.editFont.value || "malgun",
       minutes: minutes,
       content: content,
       image: "",
@@ -926,6 +1050,7 @@
           category: a.category,
           name: a.name,
           sub: a.sub || "",
+          fontKey: a.fontKey || "malgun",
           minutes: a.minutes || 0,
           image: a.imageDataUrl ? "" : (a.image || ""),
           content: a.content
@@ -1025,7 +1150,6 @@
   els.startBtn.addEventListener("click", start);
   els.pauseBtn.addEventListener("click", pause);
   els.resetBtn.addEventListener("click", reset);
-  els.nextBtn.addEventListener("click", goNextActivity);
   els.presentBtn.addEventListener("click", enterPresent);
   els.exitPresentBtn.addEventListener("click", exitPresent);
   document.addEventListener("fullscreenchange", function () {
