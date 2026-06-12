@@ -102,6 +102,26 @@
       font-size: 1rem; font-family: inherit;
     }
     .field.row input[type="number"], .field.row select { width: 160px; }
+    .content-checks { display: flex; flex-wrap: wrap; gap: 10px 18px; }
+    .check-label {
+      display: inline-flex; align-items: center; gap: 8px;
+      color: var(--text); font-size: 1rem; cursor: pointer;
+      padding: 10px 14px; border-radius: 10px;
+      background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12);
+    }
+    .check-label input { width: auto; margin: 0; accent-color: var(--accent); }
+    .check-label:has(input:checked) { border-color: var(--accent); background: rgba(99,179,237,0.15); }
+    .content-panel {
+      margin-top: 4px; padding: 14px 16px;
+      border-radius: 12px; background: rgba(15,28,46,0.45);
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+    .content-panel[hidden] { display: none !important; }
+    .save-toast {
+      margin-top: 10px; padding: 10px 14px; border-radius: 10px;
+      background: rgba(104,211,145,0.2); color: #c6f6d5; font-size: 0.95rem;
+    }
+    .save-toast[hidden] { display: none !important; }
     .thumb-row { display: flex; align-items: center; gap: 12px; margin-top: 10px; }
     .thumb-row img { max-height: 80px; border-radius: 8px; }
     .settings-actions { display: flex; flex-wrap: wrap; gap: 10px; }
@@ -164,10 +184,14 @@
       <p class="hint top" id="txtSettingsHint"></p>
 
       <div class="field">
-        <label for="editType" id="lblEditType"></label>
-        <select id="editType">
-          <option value="timer" id="optTimer"></option>
-          <option value="message" id="optMessage"></option>
+        <label for="editCategory" id="lblEditCategory"></label>
+        <select id="editCategory">
+          <option value="class-start" id="optClassStart"></option>
+          <option value="solve" id="optSolve"></option>
+          <option value="review" id="optReview"></option>
+          <option value="assessment" id="optAssessment"></option>
+          <option value="notice" id="optNotice"></option>
+          <option value="other" id="optOther"></option>
         </select>
       </div>
 
@@ -177,21 +201,36 @@
       </div>
 
       <div class="field">
-        <label for="editSub" id="lblEditSub"></label>
-        <input type="text" id="editSub" maxlength="120">
+        <label id="lblContentTypes"></label>
+        <div class="content-checks">
+          <label class="check-label"><input type="checkbox" id="chkImage"><span id="lblChkImage"></span></label>
+          <label class="check-label"><input type="checkbox" id="chkText"><span id="lblChkText"></span></label>
+          <label class="check-label"><input type="checkbox" id="chkTimer"><span id="lblChkTimer"></span></label>
+        </div>
       </div>
 
-      <div class="field row" id="minutesField">
-        <label for="editMinutes" id="lblEditMinutes"></label>
-        <input type="number" id="editMinutes" min="1" max="120" value="40">
+      <div class="content-panel" id="imageField" hidden>
+        <div class="field" style="margin-bottom:0">
+          <label for="editImage" id="lblEditImage"></label>
+          <input type="file" id="editImage" accept="image/*">
+          <div class="thumb-row" id="editThumbRow" hidden>
+            <img id="editThumb" alt="">
+            <button type="button" class="btn small" id="clearEditImageBtn"></button>
+          </div>
+        </div>
       </div>
 
-      <div class="field">
-        <label for="editImage" id="lblEditImage"></label>
-        <input type="file" id="editImage" accept="image/*">
-        <div class="thumb-row" id="editThumbRow" hidden>
-          <img id="editThumb" alt="">
-          <button type="button" class="btn small" id="clearEditImageBtn"></button>
+      <div class="content-panel" id="textField" hidden>
+        <div class="field" style="margin-bottom:0">
+          <label for="editSub" id="lblEditSub"></label>
+          <textarea id="editSub" rows="3" maxlength="300" style="width:100%;padding:12px 14px;border:1px solid rgba(255,255,255,0.15);border-radius:10px;background:rgba(15,28,46,0.7);color:var(--text);font-size:1rem;font-family:inherit;resize:vertical"></textarea>
+        </div>
+      </div>
+
+      <div class="content-panel" id="timerField" hidden>
+        <div class="field row" style="margin-bottom:0">
+          <label for="editMinutes" id="lblEditMinutes"></label>
+          <input type="number" id="editMinutes" min="1" max="180" value="40">
         </div>
       </div>
 
@@ -202,6 +241,7 @@
         <button type="button" class="btn" id="exportJsonBtn"></button>
         <button type="button" class="btn" id="reloadJsonBtn"></button>
       </div>
+      <p class="save-toast" id="saveToast" hidden></p>
     </section>
   </div>
 
@@ -218,19 +258,28 @@
     pause: "\uC77C\uC2DC\uC815\uC9C0",
     reset: "\uB9AC\uC14B",
     next: "\uB2E4\uC74C \uD65C\uB3D9",
-    settingsTitle: "\uD65C\uB3D9 \uC218\uC815",
-    settingsHint: "\uC704 \uD65C\uB3D9 \uBC84\uD2BC\uC744 \uB20C\uB7EC \uC120\uD0DD \u2192 \uC544\uB798\uC5D0\uC11C \uC218\uC815 \u2192 \uD65C\uB3D9 \uC800\uC7A5",
-    lblType: "\uD65C\uB3D9 \uC720\uD615",
-    optTimer: "\uD0C0\uC774\uBA38 (\uBB38\uC81C\uD480\uC774, \uC624\uB2F5\uBD84\uC11D \uB4F1)",
-    optMessage: "\uC548\uB0B4 \uD654\uBA74 (\uB514\uC9C0\uD138 \uB514\uD1A1\uC2A4 \uB4F1)",
+    settingsTitle: "\uD65C\uB3D9 \uB300\uC2DC\uBCF4\uB4DC",
+    settingsHint: "1 \uD65C\uB3D9 \uC720\uD615 \u2192 2 \uC774\uB984 \u2192 3 \uD654\uBA74 \uAD6C\uC131 \uC120\uD0DD \u2192 4 \uCD5C\uC885 \uC800\uC7A5",
+    lblCategory: "\uD65C\uB3D9 \uC720\uD615",
+    optClassStart: "\uC218\uC5C5 \uC2DC\uC791",
+    optSolve: "\uBB38\uC81C\uD480\uC774",
+    optReview: "\uC624\uB2F5 \uBD84\uC11D",
+    optAssessment: "\uC218\uD589\uD3C9\uAC00",
+    optNotice: "\uC548\uB0B4",
+    optOther: "\uAE30\uD0C0",
     lblName: "\uD65C\uB3D9 \uC774\uB984",
     phName: "\uC608: \uB514\uC9C0\uD138 \uB514\uD1A1\uC2A4",
-    lblSub: "\uBD80\uAC00 \uC548\uB0B4",
-    phSub: "\uC608: \uD734\uB300\uD3F0\u00B7\uD0DC\uBE14\uB9BF \uC81C\uCD9C",
-    lblMinutes: "\uC2DC\uAC04 (\uBD84)",
-    lblImage: "\uC774\uBBF8\uC9C0",
+    lblContentTypes: "\uD654\uBA74\uC5D0 \uB123\uC744 \uB0B4\uC6A9",
+    chkImage: "\uC774\uBBF8\uC9C0",
+    chkText: "\uD14D\uC2A4\uD2B8",
+    chkTimer: "\uD0C0\uC774\uBA38",
+    lblSub: "\uD654\uBA74 \uD14D\uC2A4\uD2B8",
+    phSub: "\uC608: \uD734\uB300\uD3F0\u00B7\uD0DC\uBE14\uB9BF\uC740 \uC218\uC5C5 \uC2DC\uC791\uACFC \uB3D9\uC2DC\uC5D0 \uC81C\uCD9C",
+    lblMinutes: "\uD0C0\uC774\uBA38 \uC2DC\uAC04 (\uBD84)",
+    lblImage: "\uC774\uBBF8\uC9C0 \uD30C\uC77C \uC120\uD0DD",
     clearImage: "\uC774\uBBF8\uC9C0 \uC81C\uAC70",
-    save: "\uD65C\uB3D9 \uC800\uC7A5",
+    save: "\uCD5C\uC885 \uC800\uC7A5",
+    savedOk: "\uC800\uC7A5\uB418\uC5C8\uC2B5\uB2C8\uB2E4.",
     newAct: "\uC0C8 \uD65C\uB3D9",
     del: "\uC0AD\uC81C",
     exportJson: "JSON \uBCF5\uC0AC (GitHub\uC6A9)",
@@ -244,7 +293,15 @@
     selectFirst: "\uD65C\uB3D9\uC744 \uBA3C\uC800 \uC120\uD0DD\uD558\uC138\uC694",
     setTime: "\uC2DC\uAC04\uC744 \uC124\uC815\uD574 \uC8FC\uC138\uC694",
     needName: "\uD65C\uB3D9 \uC774\uB984\uC744 \uC785\uB825\uD574 \uC8FC\uC138\uC694.",
-    needMinutes: "\uC2DC\uAC04(\uBD84)\uC744 1 \uC774\uC0C1\uC73C\uB85C \uC124\uC815\uD574 \uC8FC\uC138\uC694.",
+    needMinutes: "\uD0C0\uC774\uBA38 \uC2DC\uAC04(\uBD84)\uC744 1 \uC774\uC0C1\uC73C\uB85C \uC124\uC815\uD574 \uC8FC\uC138\uC694.",
+    needContent: "\uD654\uBA74\uC5D0 \uB123\uC744 \uB0B4\uC6A9(\uC774\uBBF8\uC9C0, \uD14D\uC2A4\uD2B8, \uD0C0\uC774\uBA38)\uC744 \uD558\uB098 \uC774\uC0C1 \uC120\uD0DD\uD574 \uC8FC\uC138\uC694.",
+    needText: "\uD14D\uC2A4\uD2B8\uB97C \uC785\uB825\uD574 \uC8FC\uC138\uC694.",
+    catClassStart: "\uC218\uC5C5\uC2DC\uC791",
+    catSolve: "\uBB38\uC81C\uD480\uC774",
+    catReview: "\uC624\uB2F5\uBD84\uC11D",
+    catAssessment: "\uC218\uD589\uD3C9\uAC00",
+    catNotice: "\uC548\uB0B4",
+    catOther: "\uAE30\uD0C0",
     needSelectDel: "\uC0AD\uC81C\uD560 \uD65C\uB3D9\uC744 \uC120\uD0DD\uD574 \uC8FC\uC138\uC694.",
     confirmDel: "\uC774 \uD65C\uB3D9\uC744 \uC0AD\uC81C\uD560\uAE4C\uC694?",
     labelGuide: "\uC548\uB0B4",
@@ -257,7 +314,16 @@
     reviewSub: "\uBBF8\uC801\uBD84 \uC624\uB2F5 \uBD84\uC11D \uB8E8\uD2F4"
   };
 
-  var STORAGE_KEY = "class-tool-v7";
+  var STORAGE_KEY = "class-tool-v8";
+
+  var CATEGORY_PRESETS = {
+    "class-start": { name: T.detoxName, sub: T.detoxSub, minutes: 0, content: { image: true, text: true, timer: false } },
+    solve: { name: T.solveName, sub: T.solveSub, minutes: 40, content: { image: true, text: true, timer: true } },
+    review: { name: T.reviewName, sub: T.reviewSub, minutes: 30, content: { image: true, text: true, timer: true } },
+    assessment: { name: "\uC218\uD589\uD3C9\uAC00", sub: "\uD734\uB300\uD3F0 \uC81C\uCD9C, \uD559\uB144\u00B7\uC774\uB984 \uC791\uC131", minutes: 25, content: { image: false, text: true, timer: true } },
+    notice: { name: "\uC548\uB0B4", sub: "", minutes: 0, content: { image: false, text: true, timer: false } },
+    other: { name: "", sub: "", minutes: 40, content: { image: false, text: true, timer: false } }
+  };
 
   var state = {
     activities: [],
@@ -290,15 +356,28 @@
     nextBtn: document.getElementById("nextBtn"),
     txtSettingsTitle: document.getElementById("txtSettingsTitle"),
     txtSettingsHint: document.getElementById("txtSettingsHint"),
-    editType: document.getElementById("editType"),
-    optTimer: document.getElementById("optTimer"),
-    optMessage: document.getElementById("optMessage"),
-    lblEditType: document.getElementById("lblEditType"),
+    editCategory: document.getElementById("editCategory"),
+    optClassStart: document.getElementById("optClassStart"),
+    optSolve: document.getElementById("optSolve"),
+    optReview: document.getElementById("optReview"),
+    optAssessment: document.getElementById("optAssessment"),
+    optNotice: document.getElementById("optNotice"),
+    optOther: document.getElementById("optOther"),
+    lblEditCategory: document.getElementById("lblEditCategory"),
     lblEditName: document.getElementById("lblEditName"),
     editName: document.getElementById("editName"),
+    lblContentTypes: document.getElementById("lblContentTypes"),
+    chkImage: document.getElementById("chkImage"),
+    chkText: document.getElementById("chkText"),
+    chkTimer: document.getElementById("chkTimer"),
+    lblChkImage: document.getElementById("lblChkImage"),
+    lblChkText: document.getElementById("lblChkText"),
+    lblChkTimer: document.getElementById("lblChkTimer"),
+    imageField: document.getElementById("imageField"),
+    textField: document.getElementById("textField"),
+    timerField: document.getElementById("timerField"),
     lblEditSub: document.getElementById("lblEditSub"),
     editSub: document.getElementById("editSub"),
-    minutesField: document.getElementById("minutesField"),
     lblEditMinutes: document.getElementById("lblEditMinutes"),
     editMinutes: document.getElementById("editMinutes"),
     lblEditImage: document.getElementById("lblEditImage"),
@@ -310,7 +389,8 @@
     newActivityBtn: document.getElementById("newActivityBtn"),
     deleteActivityBtn: document.getElementById("deleteActivityBtn"),
     exportJsonBtn: document.getElementById("exportJsonBtn"),
-    reloadJsonBtn: document.getElementById("reloadJsonBtn")
+    reloadJsonBtn: document.getElementById("reloadJsonBtn"),
+    saveToast: document.getElementById("saveToast")
   };
 
   var editingImageDataUrl = "";
@@ -327,11 +407,19 @@
     els.nextBtn.textContent = T.next;
     els.txtSettingsTitle.textContent = T.settingsTitle;
     els.txtSettingsHint.textContent = T.settingsHint;
-    els.lblEditType.textContent = T.lblType;
-    els.optTimer.textContent = T.optTimer;
-    els.optMessage.textContent = T.optMessage;
+    els.lblEditCategory.textContent = T.lblCategory;
+    els.optClassStart.textContent = T.optClassStart;
+    els.optSolve.textContent = T.optSolve;
+    els.optReview.textContent = T.optReview;
+    els.optAssessment.textContent = T.optAssessment;
+    els.optNotice.textContent = T.optNotice;
+    els.optOther.textContent = T.optOther;
     els.lblEditName.textContent = T.lblName;
     els.editName.placeholder = T.phName;
+    els.lblContentTypes.textContent = T.lblContentTypes;
+    els.lblChkImage.textContent = T.chkImage;
+    els.lblChkText.textContent = T.chkText;
+    els.lblChkTimer.textContent = T.chkTimer;
     els.lblEditSub.textContent = T.lblSub;
     els.editSub.placeholder = T.phSub;
     els.lblEditMinutes.textContent = T.lblMinutes;
@@ -358,10 +446,56 @@
 
   function defaultActivities() {
     return [
-      { id: uid(), type: "message", name: T.detoxName, sub: T.detoxSub, minutes: 0, imageDataUrl: "" },
-      { id: uid(), type: "timer", name: T.solveName, sub: T.solveSub, minutes: 40, imageDataUrl: "" },
-      { id: uid(), type: "timer", name: T.reviewName, sub: T.reviewSub, minutes: 30, imageDataUrl: "" }
+      normalizeActivity({ id: uid(), category: "class-start", name: T.detoxName, sub: T.detoxSub, minutes: 0, image: "images/detox.png", content: { image: true, text: true, timer: false } }),
+      normalizeActivity({ id: uid(), category: "solve", name: T.solveName, sub: T.solveSub, minutes: 40, image: "images/rules.png", content: { image: true, text: true, timer: true } }),
+      normalizeActivity({ id: uid(), category: "review", name: T.reviewName, sub: T.reviewSub, minutes: 30, image: "images/review.png", content: { image: true, text: true, timer: true } }),
+      normalizeActivity({ id: uid(), category: "assessment", name: "\uC218\uD589\uD3C9\uAC00", sub: "\uD734\uB300\uD3F0 \uC81C\uCD9C, \uD559\uB144\u00B7\uC774\uB984 \uC791\uC131", minutes: 25, content: { image: false, text: true, timer: true } })
     ];
+  }
+
+  function normalizeActivity(activity) {
+    var a = Object.assign({}, activity);
+    if (!a.content) {
+      if (a.type === "message") {
+        a.content = { image: !!(a.image || a.imageDataUrl), text: true, timer: false };
+        a.category = a.category || "class-start";
+      } else {
+        a.content = {
+          image: !!(a.image || a.imageDataUrl),
+          text: !!(a.sub && a.sub.trim()),
+          timer: true
+        };
+        a.category = a.category || "other";
+      }
+    }
+    if (!a.category) a.category = "other";
+    a.minutes = Number(a.minutes) || 0;
+    return a;
+  }
+
+  function getContent(activity) {
+    if (!activity) return { image: false, text: false, timer: false };
+    return normalizeActivity(activity).content;
+  }
+
+  function categoryLabel(category) {
+    var map = {
+      "class-start": T.catClassStart,
+      solve: T.catSolve,
+      review: T.catReview,
+      assessment: T.catAssessment,
+      notice: T.catNotice,
+      other: T.catOther
+    };
+    return map[category] || T.catOther;
+  }
+
+  function readEditorContent() {
+    return {
+      image: els.chkImage.checked,
+      text: els.chkText.checked,
+      timer: els.chkTimer.checked
+    };
   }
 
   function getActive() {
@@ -409,18 +543,15 @@
     if (statusClass) els.timerPanel.classList.add(statusClass);
   }
 
-  function isMessageType(activity) {
-    return activity && activity.type === "message";
-  }
-
   function updateDisplay() {
     var activity = getActive();
     if (!activity) return;
+    var content = getContent(activity);
 
     els.announcementTitle.textContent = activity.name;
-    els.announcementSub.textContent = activity.sub || "";
+    els.announcementSub.textContent = content.text ? (activity.sub || "") : "";
 
-    var imgSrc = getImageSrc(activity);
+    var imgSrc = content.image ? getImageSrc(activity) : "";
     if (imgSrc) {
       els.imagePanel.hidden = false;
       els.displayImage.src = imgSrc;
@@ -430,18 +561,18 @@
     }
 
     els.stage.className = "stage";
-    if (isMessageType(activity)) {
-      els.stage.classList.add("mode-message");
-      if (imgSrc) els.stage.classList.add("has-image");
-      els.timerPanel.hidden = true;
-      els.nextBtn.hidden = false;
-    } else {
+    if (content.timer) {
       els.stage.classList.add("mode-timer");
       if (!imgSrc) els.stage.classList.add("timer-only");
       els.timerPanel.hidden = false;
       els.nextBtn.hidden = true;
       els.activityBadge.textContent = activity.minutes + T.minSuffix;
       els.timerFace.textContent = formatTime(state.remainingMs);
+    } else {
+      els.stage.classList.add("mode-message");
+      if (imgSrc) els.stage.classList.add("has-image");
+      els.timerPanel.hidden = true;
+      els.nextBtn.hidden = false;
     }
   }
 
@@ -454,7 +585,8 @@
       var strong = document.createElement("strong");
       strong.textContent = activity.name;
       var span = document.createElement("span");
-      span.textContent = activity.type === "message" ? T.labelGuide : activity.minutes + T.minSuffix;
+      var c = getContent(activity);
+      span.textContent = c.timer ? activity.minutes + T.minSuffix : categoryLabel(activity.category);
       btn.appendChild(strong);
       btn.appendChild(span);
       btn.addEventListener("click", function () { selectActivity(activity.id); });
@@ -462,34 +594,61 @@
     });
   }
 
-  function updateEditorTypeUI() {
-    els.minutesField.hidden = els.editType.value === "message";
+  function updateContentFieldsUI() {
+    var content = readEditorContent();
+    els.imageField.hidden = !content.image;
+    els.textField.hidden = !content.text;
+    els.timerField.hidden = !content.timer;
+  }
+
+  function applyCategoryPreset(category, force) {
+    var preset = CATEGORY_PRESETS[category];
+    if (!preset) return;
+    if (force || !els.editName.value.trim()) els.editName.value = preset.name;
+    if (force || !els.editSub.value.trim()) els.editSub.value = preset.sub;
+    if (force || els.editMinutes.value === "40" || els.editMinutes.value === "0") {
+      els.editMinutes.value = preset.minutes || 40;
+    }
+    if (force) {
+      els.chkImage.checked = preset.content.image;
+      els.chkText.checked = preset.content.text;
+      els.chkTimer.checked = preset.content.timer;
+    }
+    updateContentFieldsUI();
   }
 
   function loadEditor(activity) {
     if (!activity) {
       state.editingId = null;
-      els.editType.value = "timer";
+      els.editCategory.value = "other";
       els.editName.value = "";
       els.editSub.value = "";
       els.editMinutes.value = 40;
+      els.chkImage.checked = false;
+      els.chkText.checked = true;
+      els.chkTimer.checked = false;
       editingImageDataUrl = "";
       editingImagePath = "";
+      els.editImage.value = "";
       els.editThumbRow.hidden = true;
-      updateEditorTypeUI();
+      updateContentFieldsUI();
       return;
     }
+    activity = normalizeActivity(activity);
     state.editingId = activity.id;
-    els.editType.value = activity.type || "timer";
+    els.editCategory.value = activity.category || "other";
     els.editName.value = activity.name;
     els.editSub.value = activity.sub || "";
     els.editMinutes.value = activity.minutes || 40;
+    els.chkImage.checked = !!activity.content.image;
+    els.chkText.checked = !!activity.content.text;
+    els.chkTimer.checked = !!activity.content.timer;
     editingImageDataUrl = activity.imageDataUrl || "";
     editingImagePath = activity.image || "";
     var preview = editingImageDataUrl || editingImagePath;
     els.editThumbRow.hidden = !preview;
     if (preview) els.editThumb.src = preview;
-    updateEditorTypeUI();
+    updateContentFieldsUI();
   }
 
   function selectActivity(id) {
@@ -529,7 +688,7 @@
 
   function start() {
     var activity = getActive();
-    if (!activity || isMessageType(activity)) return;
+    if (!activity || !getContent(activity).timer) return;
     if (state.running && !state.paused) return;
     if (!state.paused) {
       state.remainingMs = minutesToMs(activity.minutes);
@@ -564,40 +723,58 @@
     updateDisplay();
   }
 
+  function showSaveToast() {
+    els.saveToast.textContent = T.savedOk;
+    els.saveToast.hidden = false;
+    clearTimeout(showSaveToast._timer);
+    showSaveToast._timer = setTimeout(function () {
+      els.saveToast.hidden = true;
+    }, 2500);
+  }
+
   function saveActivity() {
     var name = els.editName.value.trim();
-    var type = els.editType.value;
-    var minutes = type === "message" ? 0 : Number(els.editMinutes.value);
+    var content = readEditorContent();
+    var minutes = content.timer ? Number(els.editMinutes.value) : 0;
     if (!name) { alert(T.needName); return; }
-    if (type === "timer" && (!minutes || minutes < 1)) { alert(T.needMinutes); return; }
+    if (!content.image && !content.text && !content.timer) { alert(T.needContent); return; }
+    if (content.text && !els.editSub.value.trim()) { alert(T.needText); return; }
+    if (content.timer && (!minutes || minutes < 1)) { alert(T.needMinutes); return; }
     var payload = {
-      type: type,
+      category: els.editCategory.value,
       name: name,
-      sub: els.editSub.value.trim(),
+      sub: content.text ? els.editSub.value.trim() : "",
       minutes: minutes,
-      image: editingImageDataUrl ? "" : editingImagePath,
-      imageDataUrl: editingImageDataUrl
+      content: content,
+      image: "",
+      imageDataUrl: ""
     };
+    if (content.image) {
+      payload.imageDataUrl = editingImageDataUrl;
+      payload.image = editingImageDataUrl ? "" : editingImagePath;
+    }
     if (state.editingId) {
       for (var i = 0; i < state.activities.length; i++) {
         if (state.activities[i].id === state.editingId) {
-          state.activities[i] = Object.assign({}, state.activities[i], payload);
+          state.activities[i] = normalizeActivity(Object.assign({}, state.activities[i], payload));
           break;
         }
       }
     } else {
-      var created = Object.assign({ id: uid() }, payload);
+      var created = normalizeActivity(Object.assign({ id: uid() }, payload));
       state.activities.push(created);
       state.activeId = created.id;
       state.editingId = created.id;
     }
     selectActivity(state.editingId || state.activeId);
+    showSaveToast();
   }
 
   function newActivity() {
     reset();
     state.editingId = null;
     loadEditor(null);
+    applyCategoryPreset(els.editCategory.value, true);
     els.editName.focus();
   }
 
@@ -628,13 +805,15 @@
   function exportForGitHub() {
     var out = {
       activities: state.activities.map(function (a) {
+        a = normalizeActivity(a);
         return {
           id: a.id,
-          type: a.type,
+          category: a.category,
           name: a.name,
           sub: a.sub || "",
           minutes: a.minutes || 0,
-          image: a.imageDataUrl ? "" : (a.image || "")
+          image: a.imageDataUrl ? "" : (a.image || ""),
+          content: a.content
         };
       })
     };
@@ -656,7 +835,7 @@
       .then(function (res) { return res.json(); })
       .then(function (data) {
         if (data.activities && data.activities.length > 0) {
-          state.activities = data.activities;
+          state.activities = data.activities.map(normalizeActivity);
           state.activeId = data.activities[0].id;
           save();
           selectActivity(state.activeId);
@@ -678,7 +857,7 @@
     try {
       var data = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
       if (data.activities && data.activities.length > 0) {
-        state.activities = data.activities;
+        state.activities = data.activities.map(normalizeActivity);
         state.activeId = data.activeId || data.activities[0].id;
         done();
         return;
@@ -687,7 +866,7 @@
     fetch("activities.json?v=" + Date.now())
       .then(function (res) { return res.json(); })
       .then(function (data) {
-        state.activities = (data.activities && data.activities.length) ? data.activities : defaultActivities();
+        state.activities = (data.activities && data.activities.length) ? data.activities.map(normalizeActivity) : defaultActivities();
         state.activeId = state.activities[0].id;
         save();
         done();
@@ -699,7 +878,12 @@
       });
   }
 
-  els.editType.addEventListener("change", updateEditorTypeUI);
+  els.editCategory.addEventListener("change", function () {
+    if (!state.editingId) applyCategoryPreset(els.editCategory.value, true);
+  });
+  els.chkImage.addEventListener("change", updateContentFieldsUI);
+  els.chkText.addEventListener("change", updateContentFieldsUI);
+  els.chkTimer.addEventListener("change", updateContentFieldsUI);
   els.editImage.addEventListener("change", function (e) {
     var file = e.target.files && e.target.files[0];
     if (!file) return;
