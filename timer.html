@@ -1,0 +1,671 @@
+﻿<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#1a365d">
+  <title>Class Tool</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    :root {
+      --bg: #0f1c2e; --surface: #1a365d; --surface-light: #234876;
+      --text: #f7fafc; --muted: #a0aec0; --accent: #63b3ed;
+      --accent-strong: #3182ce; --ok: #68d391; --danger: #fc8181;
+    }
+    html, body {
+      margin: 0; min-height: 100%;
+      font-family: "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
+      background: linear-gradient(160deg, #1a365d 0%, var(--bg) 55%);
+      color: var(--text);
+    }
+    body { min-height: 100dvh; }
+    .app { max-width: 1200px; margin: 0 auto; padding: 16px 20px 32px; }
+    .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .app-name { font-size: 1.1rem; color: var(--muted); }
+    .btn {
+      border: none; border-radius: 12px; padding: 12px 18px;
+      font-size: 1rem; font-weight: 600; cursor: pointer;
+      background: var(--surface-light); color: var(--text); font-family: inherit;
+    }
+    .btn.primary { background: var(--accent-strong); }
+    .btn.danger { background: rgba(252,129,129,0.25); color: #fed7d7; }
+    .btn.small { padding: 8px 12px; font-size: 0.9rem; }
+    .btn.icon-btn { background: var(--accent-strong); }
+    .activity-bar { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 12px; }
+    .activity-chip {
+      flex: 0 0 auto; border: 2px solid rgba(255,255,255,0.15);
+      background: rgba(255,255,255,0.06); color: var(--text);
+      border-radius: 14px; padding: 12px 16px; cursor: pointer;
+      text-align: left; min-width: 130px; font-family: inherit;
+    }
+    .activity-chip strong { display: block; font-size: 1rem; margin-bottom: 4px; }
+    .activity-chip span { font-size: 0.9rem; color: var(--muted); }
+    .activity-chip.active { border-color: var(--accent); background: rgba(99,179,237,0.18); }
+    .announcement {
+      background: var(--surface); border-radius: 16px;
+      padding: 18px 24px; margin-bottom: 16px; text-align: center;
+    }
+    .announcement-title { margin: 0; font-size: clamp(1.6rem, 4vw, 2.4rem); }
+    .announcement-sub { margin: 8px 0 0; font-size: clamp(1rem, 2.5vw, 1.3rem); color: #cbd5e0; }
+    .announcement-sub:empty { display: none; }
+    .stage { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 16px; margin-bottom: 20px; }
+    .image-panel, .timer-panel {
+      background: var(--surface); border-radius: 20px; padding: 20px; min-height: 340px;
+    }
+    .image-panel { display: flex; align-items: center; justify-content: center; overflow: hidden; }
+    .image-panel img { max-width: 100%; max-height: 520px; object-fit: contain; border-radius: 12px; }
+    .image-empty {
+      text-align: center; color: var(--muted); font-size: 1.05rem;
+      padding: 24px; border: 2px dashed rgba(255,255,255,0.15); border-radius: 12px; width: 100%;
+    }
+    .timer-panel {
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; gap: 12px;
+    }
+    .stage.message-only { grid-template-columns: 1fr; }
+    .stage.message-only .image-panel { min-height: 420px; }
+    .activity-badge {
+      font-size: 1.3rem; font-weight: 700; color: var(--accent);
+      background: rgba(99,179,237,0.15); padding: 8px 18px; border-radius: 999px;
+    }
+    .message-box {
+      font-size: clamp(2rem, 6vw, 3.5rem); font-weight: 800;
+      text-align: center; line-height: 1.3; color: #fed7d7;
+    }
+    .message-desc {
+      font-size: clamp(1rem, 2.5vw, 1.3rem); color: var(--muted);
+      text-align: center; max-width: 520px; line-height: 1.6;
+    }
+    .timer-face {
+      font-size: clamp(4.5rem, 15vw, 7rem); font-weight: 800;
+      font-variant-numeric: tabular-nums; line-height: 1;
+    }
+    .timer-label { font-size: 1.2rem; color: var(--muted); }
+    .timer-panel.running .timer-face { color: var(--ok); }
+    .timer-panel.finished .timer-face { color: var(--danger); }
+    .timer-actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 8px; }
+    .settings { background: var(--surface); border-radius: 16px; padding: 20px 24px; }
+    .settings h2 { margin: 0 0 8px; font-size: 1.2rem; }
+    .field { margin-bottom: 14px; }
+    .field.row { display: flex; gap: 12px; align-items: end; flex-wrap: wrap; }
+    label { display: block; margin-bottom: 6px; color: var(--muted); font-size: 0.95rem; }
+    input[type="text"], input[type="number"], input[type="file"], select {
+      width: 100%; padding: 12px 14px;
+      border: 1px solid rgba(255,255,255,0.15); border-radius: 10px;
+      background: rgba(15,28,46,0.7); color: var(--text);
+      font-size: 1rem; font-family: inherit;
+    }
+    .field.row input[type="number"], .field.row select { width: 160px; }
+    .thumb-row { display: flex; align-items: center; gap: 12px; margin-top: 10px; }
+    .thumb-row img { max-height: 80px; border-radius: 8px; }
+    .settings-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+    .hint { margin: 0; font-size: 0.9rem; color: var(--muted); }
+    .hint.top { margin-bottom: 16px; }
+    .exit-present {
+      position: fixed; top: 16px; right: 16px; z-index: 100;
+      border: none; border-radius: 999px; padding: 12px 18px;
+      background: rgba(0,0,0,0.55); color: white; font-size: 1rem;
+      cursor: pointer; font-family: inherit;
+    }
+    body.present .top-bar, body.present .settings { display: none; }
+    body.present .app { max-width: none; padding: 20px 24px; }
+    body.present .announcement-title { font-size: clamp(2rem, 5vw, 3rem); }
+    body.present .stage { min-height: calc(100dvh - 220px); align-items: center; }
+    body.present .image-panel, body.present .timer-panel { min-height: 420px; }
+    body.present .image-panel img { max-height: 70vh; }
+    body.present .timer-actions { display: none; }
+    @media (max-width: 900px) {
+      .stage { grid-template-columns: 1fr; }
+      .image-panel, .timer-panel { min-height: 260px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="top-bar">
+      <span class="app-name" id="txtAppName"></span>
+      <button type="button" class="btn icon-btn" id="presentBtn"></button>
+    </header>
+
+    <section class="activity-bar" id="activityBar"></section>
+
+    <section class="announcement">
+      <h1 class="announcement-title" id="announcementTitle"></h1>
+      <p class="announcement-sub" id="announcementSub"></p>
+    </section>
+
+    <main class="stage" id="stage">
+      <div class="image-panel">
+        <img id="displayImage" alt="" hidden>
+        <div class="image-empty" id="imageEmpty"></div>
+      </div>
+
+      <div class="timer-panel" id="timerPanel">
+        <div class="activity-badge" id="activityBadge"></div>
+        <div class="timer-face" id="timerFace">00:00</div>
+        <div class="timer-label" id="timerLabel"></div>
+        <div class="timer-actions">
+          <button type="button" class="btn primary" id="startBtn"></button>
+          <button type="button" class="btn" id="pauseBtn"></button>
+          <button type="button" class="btn danger" id="resetBtn"></button>
+        </div>
+      </div>
+
+      <div class="timer-panel" id="messagePanel" hidden>
+        <div class="message-box" id="messageBox"></div>
+        <p class="message-desc" id="messageDesc"></p>
+        <button type="button" class="btn primary" id="nextBtn"></button>
+      </div>
+    </main>
+
+    <section class="settings" id="settings">
+      <h2 id="txtSettingsTitle"></h2>
+      <p class="hint top" id="txtSettingsHint"></p>
+
+      <div class="field">
+        <label for="editType" id="lblEditType"></label>
+        <select id="editType">
+          <option value="timer" id="optTimer"></option>
+          <option value="message" id="optMessage"></option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="editName" id="lblEditName"></label>
+        <input type="text" id="editName" maxlength="40">
+      </div>
+
+      <div class="field">
+        <label for="editSub" id="lblEditSub"></label>
+        <input type="text" id="editSub" maxlength="120">
+      </div>
+
+      <div class="field row" id="minutesField">
+        <label for="editMinutes" id="lblEditMinutes"></label>
+        <input type="number" id="editMinutes" min="1" max="120" value="40">
+      </div>
+
+      <div class="field">
+        <label for="editImage" id="lblEditImage"></label>
+        <input type="file" id="editImage" accept="image/*">
+        <div class="thumb-row" id="editThumbRow" hidden>
+          <img id="editThumb" alt="">
+          <button type="button" class="btn small" id="clearEditImageBtn"></button>
+        </div>
+      </div>
+
+      <div class="settings-actions">
+        <button type="button" class="btn primary" id="saveActivityBtn"></button>
+        <button type="button" class="btn" id="newActivityBtn"></button>
+        <button type="button" class="btn danger" id="deleteActivityBtn"></button>
+      </div>
+    </section>
+  </div>
+
+  <button type="button" class="exit-present" id="exitPresentBtn" hidden></button>
+
+  <script>
+(function () {
+  var T = {
+    appName: "\uC218\uC5C5 \uB3C4\uAD6C",
+    present: "\uC218\uC5C5 \uD654\uBA74",
+    exitPresent: "\uC124\uC815\uC73C\uB85C",
+    imageEmpty: "\uC774\uBBF8\uC9C0\uB97C \uB4F1\uB85D\uD558\uBA74 \uC5EC\uAE30\uC5D0 \uD45C\uC2DC\uB429\uB2C8\uB2E4",
+    start: "\uC2DC\uC791",
+    pause: "\uC77C\uC2DC\uC815\uC9C0",
+    reset: "\uB9AC\uC14B",
+    next: "\uB2E4\uC74C \uD65C\uB3D9",
+    settingsTitle: "\uD65C\uB3D9 \uB9CC\uB4E4\uAE30 / \uC218\uC815",
+    settingsHint: "\uC774\uBBF8\uC9C0 + \uD65C\uB3D9 \uC774\uB984 + \uC2DC\uAC04\uC744 \uBB36\uC5B4\uC11C \uC800\uC7A5\uD569\uB2C8\uB2E4.",
+    lblType: "\uD65C\uB3D9 \uC720\uD615",
+    optTimer: "\uD0C0\uC774\uBA38 (\uBB38\uC81C\uD480\uC774, \uC624\uB2F5\uBD84\uC11D \uB4F1)",
+    optMessage: "\uC548\uB0B4 \uD654\uBA74 (\uB514\uC9C0\uD138 \uB514\uD1A1\uC2A4 \uB4F1)",
+    lblName: "\uD65C\uB3D9 \uC774\uB984",
+    phName: "\uC608: \uB514\uC9C0\uD138 \uB514\uD1A1\uC2A4",
+    lblSub: "\uBD80\uAC00 \uC548\uB0B4",
+    phSub: "\uC608: \uD734\uB300\uD3F0\u00B7\uD0DC\uBE14\uB9BF \uC81C\uCD9C",
+    lblMinutes: "\uC2DC\uAC04 (\uBD84)",
+    lblImage: "\uC774\uBBF8\uC9C0",
+    clearImage: "\uC774\uBBF8\uC9C0 \uC81C\uAC70",
+    save: "\uD65C\uB3D9 \uC800\uC7A5",
+    newAct: "\uC0C8 \uD65C\uB3D9",
+    del: "\uC0AD\uC81C",
+    ready: "\uC900\uBE44",
+    running: "\uC9C4\uD589 \uC911",
+    paused: "\uC77C\uC2DC\uC815\uC9C0",
+    finished: "\uC2DC\uAC04 \uC885\uB8CC!",
+    selectFirst: "\uD65C\uB3D9\uC744 \uBA3C\uC800 \uC120\uD0DD\uD558\uC138\uC694",
+    setTime: "\uC2DC\uAC04\uC744 \uC124\uC815\uD574 \uC8FC\uC138\uC694",
+    needName: "\uD65C\uB3D9 \uC774\uB984\uC744 \uC785\uB825\uD574 \uC8FC\uC138\uC694.",
+    needMinutes: "\uC2DC\uAC04(\uBD84)\uC744 1 \uC774\uC0C1\uC73C\uB85C \uC124\uC815\uD574 \uC8FC\uC138\uC694.",
+    needSelectDel: "\uC0AD\uC81C\uD560 \uD65C\uB3D9\uC744 \uC120\uD0DD\uD574 \uC8FC\uC138\uC694.",
+    confirmDel: "\uC774 \uD65C\uB3D9\uC744 \uC0AD\uC81C\uD560\uAE4C\uC694?",
+    labelGuide: "\uC548\uB0B4",
+    minSuffix: "\uBD84",
+    detoxName: "\uC808\uB300 \uC6D0\uCE59: \uB514\uC9C0\uD138 \uB514\uD1A1\uC2A4",
+    detoxSub: "\uBAA8\uB4E0 \uD734\uB300\uD3F0\uACFC \uD0DC\uBE14\uB9BF\uC740 \uC218\uC5C5 \uC2DC\uC791\uACFC \uB3D9\uC2DC\uC5D0 \uC81C\uCD9C",
+    solveName: "\uBB38\uC81C\uD480\uC774",
+    solveSub: "\uAD50\uC2E4 \uD559\uC2B5 \uC6B4\uC601 \uC6D0\uCE59",
+    reviewName: "\uC624\uB2F5 \uBD84\uC11D",
+    reviewSub: "\uBBF8\uC801\uBD84 \uC624\uB2F5 \uBD84\uC11D \uB8E8\uD2F4"
+  };
+
+  var STORAGE_KEY = "class-tool-v5";
+
+  var state = {
+    activities: [],
+    activeId: null,
+    editingId: null,
+    running: false,
+    paused: false,
+    remainingMs: 0,
+    endTime: null,
+    tickId: null
+  };
+
+  var els = {
+    txtAppName: document.getElementById("txtAppName"),
+    presentBtn: document.getElementById("presentBtn"),
+    exitPresentBtn: document.getElementById("exitPresentBtn"),
+    activityBar: document.getElementById("activityBar"),
+    announcementTitle: document.getElementById("announcementTitle"),
+    announcementSub: document.getElementById("announcementSub"),
+    stage: document.getElementById("stage"),
+    displayImage: document.getElementById("displayImage"),
+    imageEmpty: document.getElementById("imageEmpty"),
+    timerPanel: document.getElementById("timerPanel"),
+    messagePanel: document.getElementById("messagePanel"),
+    messageBox: document.getElementById("messageBox"),
+    messageDesc: document.getElementById("messageDesc"),
+    activityBadge: document.getElementById("activityBadge"),
+    timerFace: document.getElementById("timerFace"),
+    timerLabel: document.getElementById("timerLabel"),
+    startBtn: document.getElementById("startBtn"),
+    pauseBtn: document.getElementById("pauseBtn"),
+    resetBtn: document.getElementById("resetBtn"),
+    nextBtn: document.getElementById("nextBtn"),
+    txtSettingsTitle: document.getElementById("txtSettingsTitle"),
+    txtSettingsHint: document.getElementById("txtSettingsHint"),
+    editType: document.getElementById("editType"),
+    optTimer: document.getElementById("optTimer"),
+    optMessage: document.getElementById("optMessage"),
+    lblEditType: document.getElementById("lblEditType"),
+    lblEditName: document.getElementById("lblEditName"),
+    editName: document.getElementById("editName"),
+    lblEditSub: document.getElementById("lblEditSub"),
+    editSub: document.getElementById("editSub"),
+    minutesField: document.getElementById("minutesField"),
+    lblEditMinutes: document.getElementById("lblEditMinutes"),
+    editMinutes: document.getElementById("editMinutes"),
+    lblEditImage: document.getElementById("lblEditImage"),
+    editImage: document.getElementById("editImage"),
+    editThumb: document.getElementById("editThumb"),
+    editThumbRow: document.getElementById("editThumbRow"),
+    clearEditImageBtn: document.getElementById("clearEditImageBtn"),
+    saveActivityBtn: document.getElementById("saveActivityBtn"),
+    newActivityBtn: document.getElementById("newActivityBtn"),
+    deleteActivityBtn: document.getElementById("deleteActivityBtn")
+  };
+
+  var editingImageDataUrl = "";
+
+  function applyStaticText() {
+    document.title = T.appName;
+    els.txtAppName.textContent = T.appName;
+    els.presentBtn.textContent = T.present;
+    els.exitPresentBtn.textContent = T.exitPresent;
+    els.imageEmpty.textContent = T.imageEmpty;
+    els.startBtn.textContent = T.start;
+    els.pauseBtn.textContent = T.pause;
+    els.resetBtn.textContent = T.reset;
+    els.nextBtn.textContent = T.next;
+    els.txtSettingsTitle.textContent = T.settingsTitle;
+    els.txtSettingsHint.textContent = T.settingsHint;
+    els.lblEditType.textContent = T.lblType;
+    els.optTimer.textContent = T.optTimer;
+    els.optMessage.textContent = T.optMessage;
+    els.lblEditName.textContent = T.lblName;
+    els.editName.placeholder = T.phName;
+    els.lblEditSub.textContent = T.lblSub;
+    els.editSub.placeholder = T.phSub;
+    els.lblEditMinutes.textContent = T.lblMinutes;
+    els.lblEditImage.textContent = T.lblImage;
+    els.clearEditImageBtn.textContent = T.clearImage;
+    els.saveActivityBtn.textContent = T.save;
+    els.newActivityBtn.textContent = T.newAct;
+    els.deleteActivityBtn.textContent = T.del;
+    els.timerLabel.textContent = T.ready;
+  }
+
+  function uid() {
+    return "a-" + Date.now() + "-" + Math.random().toString(36).slice(2, 7);
+  }
+
+  function defaultActivities() {
+    return [
+      { id: uid(), type: "message", name: T.detoxName, sub: T.detoxSub, minutes: 0, imageDataUrl: "" },
+      { id: uid(), type: "timer", name: T.solveName, sub: T.solveSub, minutes: 40, imageDataUrl: "" },
+      { id: uid(), type: "timer", name: T.reviewName, sub: T.reviewSub, minutes: 30, imageDataUrl: "" }
+    ];
+  }
+
+  function getActive() {
+    for (var i = 0; i < state.activities.length; i++) {
+      if (state.activities[i].id === state.activeId) return state.activities[i];
+    }
+    return null;
+  }
+
+  function formatTime(ms) {
+    var total = Math.max(0, Math.floor(ms / 1000));
+    var m = Math.floor(total / 60);
+    var s = total % 60;
+    return (m < 10 ? "0" : "") + m + ":" + (s < 10 ? "0" : "") + s;
+  }
+
+  function minutesToMs(minutes) {
+    return (Number(minutes) || 0) * 60 * 1000;
+  }
+
+  function stopTick() {
+    if (state.tickId) {
+      clearInterval(state.tickId);
+      state.tickId = null;
+    }
+  }
+
+  function beep() {
+    try {
+      var ctx = new (window.AudioContext || window.webkitAudioContext)();
+      var osc = ctx.createOscillator();
+      var gain = ctx.createGain();
+      osc.frequency.value = 880;
+      gain.gain.value = 0.1;
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.35);
+    } catch (e) {}
+  }
+
+  function setLabel(text, statusClass) {
+    els.timerLabel.textContent = text;
+    els.timerPanel.classList.remove("running", "finished");
+    if (statusClass) els.timerPanel.classList.add(statusClass);
+  }
+
+  function isMessageType(activity) {
+    return activity && activity.type === "message";
+  }
+
+  function updateDisplay() {
+    var activity = getActive();
+    if (!activity) return;
+
+    els.announcementTitle.textContent = activity.name;
+    els.announcementSub.textContent = activity.sub || "";
+
+    if (activity.imageDataUrl) {
+      els.displayImage.src = activity.imageDataUrl;
+      els.displayImage.hidden = false;
+      els.imageEmpty.hidden = true;
+    } else {
+      els.displayImage.hidden = true;
+      els.displayImage.removeAttribute("src");
+      els.imageEmpty.hidden = false;
+    }
+
+    if (isMessageType(activity)) {
+      els.stage.classList.add("message-only");
+      els.timerPanel.hidden = true;
+      els.messagePanel.hidden = false;
+      els.messageBox.textContent = activity.name;
+      els.messageDesc.textContent = activity.sub || "";
+    } else {
+      els.stage.classList.remove("message-only");
+      els.timerPanel.hidden = false;
+      els.messagePanel.hidden = true;
+      els.activityBadge.textContent = activity.minutes + T.minSuffix;
+      els.timerFace.textContent = formatTime(state.remainingMs);
+    }
+  }
+
+  function renderActivityBar() {
+    els.activityBar.innerHTML = "";
+    state.activities.forEach(function (activity) {
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "activity-chip" + (activity.id === state.activeId ? " active" : "");
+      var strong = document.createElement("strong");
+      strong.textContent = activity.name;
+      var span = document.createElement("span");
+      span.textContent = activity.type === "message" ? T.labelGuide : activity.minutes + T.minSuffix;
+      btn.appendChild(strong);
+      btn.appendChild(span);
+      btn.addEventListener("click", function () { selectActivity(activity.id); });
+      els.activityBar.appendChild(btn);
+    });
+  }
+
+  function updateEditorTypeUI() {
+    els.minutesField.hidden = els.editType.value === "message";
+  }
+
+  function loadEditor(activity) {
+    if (!activity) {
+      state.editingId = null;
+      els.editType.value = "timer";
+      els.editName.value = "";
+      els.editSub.value = "";
+      els.editMinutes.value = 40;
+      editingImageDataUrl = "";
+      els.editThumbRow.hidden = true;
+      updateEditorTypeUI();
+      return;
+    }
+    state.editingId = activity.id;
+    els.editType.value = activity.type || "timer";
+    els.editName.value = activity.name;
+    els.editSub.value = activity.sub || "";
+    els.editMinutes.value = activity.minutes || 40;
+    editingImageDataUrl = activity.imageDataUrl || "";
+    els.editThumbRow.hidden = !editingImageDataUrl;
+    if (editingImageDataUrl) els.editThumb.src = editingImageDataUrl;
+    updateEditorTypeUI();
+  }
+
+  function selectActivity(id) {
+    stopTick();
+    state.running = false;
+    state.paused = false;
+    state.activeId = id;
+    var activity = getActive();
+    state.remainingMs = minutesToMs(activity && activity.minutes ? activity.minutes : 0);
+    setLabel(T.ready);
+    loadEditor(activity);
+    renderActivityBar();
+    updateDisplay();
+    save();
+  }
+
+  function goNextActivity() {
+    var idx = -1;
+    for (var i = 0; i < state.activities.length; i++) {
+      if (state.activities[i].id === state.activeId) { idx = i; break; }
+    }
+    if (idx >= 0 && idx < state.activities.length - 1) {
+      selectActivity(state.activities[idx + 1].id);
+    }
+  }
+
+  function onTick() {
+    state.remainingMs = Math.max(0, state.endTime - Date.now());
+    updateDisplay();
+    if (state.remainingMs <= 0) {
+      stopTick();
+      state.running = false;
+      setLabel(T.finished, "finished");
+      beep();
+    }
+  }
+
+  function start() {
+    var activity = getActive();
+    if (!activity || isMessageType(activity)) return;
+    if (state.running && !state.paused) return;
+    if (!state.paused) {
+      state.remainingMs = minutesToMs(activity.minutes);
+      if (state.remainingMs <= 0) { setLabel(T.setTime); return; }
+    }
+    state.endTime = Date.now() + state.remainingMs;
+    state.running = true;
+    state.paused = false;
+    stopTick();
+    state.tickId = setInterval(onTick, 200);
+    onTick();
+    setLabel(T.running, "running");
+  }
+
+  function pause() {
+    if (!state.running || state.paused) return;
+    stopTick();
+    state.paused = true;
+    state.running = false;
+    state.remainingMs = Math.max(0, state.endTime - Date.now());
+    setLabel(T.paused);
+    updateDisplay();
+  }
+
+  function reset() {
+    var activity = getActive();
+    stopTick();
+    state.running = false;
+    state.paused = false;
+    state.remainingMs = minutesToMs(activity && activity.minutes ? activity.minutes : 0);
+    setLabel(T.ready);
+    updateDisplay();
+  }
+
+  function saveActivity() {
+    var name = els.editName.value.trim();
+    var type = els.editType.value;
+    var minutes = type === "message" ? 0 : Number(els.editMinutes.value);
+    if (!name) { alert(T.needName); return; }
+    if (type === "timer" && (!minutes || minutes < 1)) { alert(T.needMinutes); return; }
+    var payload = {
+      type: type,
+      name: name,
+      sub: els.editSub.value.trim(),
+      minutes: minutes,
+      imageDataUrl: editingImageDataUrl
+    };
+    if (state.editingId) {
+      for (var i = 0; i < state.activities.length; i++) {
+        if (state.activities[i].id === state.editingId) {
+          state.activities[i] = Object.assign({}, state.activities[i], payload);
+          break;
+        }
+      }
+    } else {
+      var created = Object.assign({ id: uid() }, payload);
+      state.activities.push(created);
+      state.activeId = created.id;
+      state.editingId = created.id;
+    }
+    selectActivity(state.editingId || state.activeId);
+  }
+
+  function newActivity() {
+    reset();
+    state.editingId = null;
+    loadEditor(null);
+    els.editName.focus();
+  }
+
+  function deleteActivity() {
+    if (!state.editingId) { alert(T.needSelectDel); return; }
+    if (!confirm(T.confirmDel)) return;
+    state.activities = state.activities.filter(function (a) { return a.id !== state.editingId; });
+    if (state.activities.length === 0) state.activities = defaultActivities();
+    selectActivity(state.activities[0].id);
+  }
+
+  function enterPresent() {
+    document.body.classList.add("present");
+    els.exitPresentBtn.hidden = false;
+    if (document.documentElement.requestFullscreen) {
+      document.documentElement.requestFullscreen().catch(function () {});
+    }
+  }
+
+  function exitPresent() {
+    document.body.classList.remove("present");
+    els.exitPresentBtn.hidden = true;
+    if (document.fullscreenElement && document.exitFullscreen) {
+      document.exitFullscreen().catch(function () {});
+    }
+  }
+
+  function save() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      activities: state.activities,
+      activeId: state.activeId
+    }));
+  }
+
+  function load() {
+    try {
+      var data = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+      if (data.activities && data.activities.length > 0) {
+        state.activities = data.activities;
+        state.activeId = data.activeId || data.activities[0].id;
+      } else {
+        state.activities = defaultActivities();
+        state.activeId = state.activities[0].id;
+      }
+    } catch (e) {
+      state.activities = defaultActivities();
+      state.activeId = state.activities[0].id;
+    }
+  }
+
+  els.editType.addEventListener("change", updateEditorTypeUI);
+  els.editImage.addEventListener("change", function (e) {
+    var file = e.target.files && e.target.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function () {
+      editingImageDataUrl = reader.result;
+      els.editThumb.src = editingImageDataUrl;
+      els.editThumbRow.hidden = false;
+    };
+    reader.readAsDataURL(file);
+  });
+  els.clearEditImageBtn.addEventListener("click", function () {
+    editingImageDataUrl = "";
+    els.editImage.value = "";
+    els.editThumbRow.hidden = true;
+  });
+  els.saveActivityBtn.addEventListener("click", saveActivity);
+  els.newActivityBtn.addEventListener("click", newActivity);
+  els.deleteActivityBtn.addEventListener("click", deleteActivity);
+  els.startBtn.addEventListener("click", start);
+  els.pauseBtn.addEventListener("click", pause);
+  els.resetBtn.addEventListener("click", reset);
+  els.nextBtn.addEventListener("click", goNextActivity);
+  els.presentBtn.addEventListener("click", enterPresent);
+  els.exitPresentBtn.addEventListener("click", exitPresent);
+  document.addEventListener("fullscreenchange", function () {
+    if (!document.fullscreenElement && document.body.classList.contains("present")) exitPresent();
+  });
+
+  applyStaticText();
+  load();
+  selectActivity(state.activeId);
+})();
+  </script>
+</body>
+</html>
