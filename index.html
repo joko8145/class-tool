@@ -355,6 +355,11 @@
       <div class="content-fields-row" id="contentFieldsRow" hidden>
         <div class="content-panel" id="imageField" hidden>
           <div class="field">
+            <label for="editImagePath" id="lblEditImagePath"></label>
+            <input type="text" id="editImagePath" placeholder="images/solve.png">
+            <p class="hint" id="imgSyncHint"></p>
+          </div>
+          <div class="field">
             <label for="editImage" id="lblEditImage"></label>
             <input type="file" id="editImage" accept="image/*">
             <div class="thumb-row" id="editThumbRow" hidden>
@@ -438,7 +443,10 @@
     fontNanum: "\uB098\uB214\uC2A4\uD018\uC5B4",
     fontGothic: "\uACE0\uB515(Arial)",
     lblMinutes: "\uD0C0\uC774\uBA38 \uC2DC\uAC04 (\uBD84)",
-    lblImage: "\uC774\uBBF8\uC9C0 \uD30C\uC77C \uC120\uD0DD",
+    lblImagePath: "\uC774\uBBF8\uC9C0 \uACBD\uB85C (GitHub)",
+    phImagePath: "images/solve.png",
+    imgSyncHint: "\uD0DC\uBE14\uB9BF\u00B7PC \uB3D9\uC77C: PC\uC5D0\uC11C images \uD3F4\uB354\uC5D0 \uB123\uACE0 git push. \uD30C\uC77C \uC120\uD0DD\uC740 \uC774 \uAE30\uAE30\uC5D0\uB9CC \uC800\uC7A5.",
+    lblImage: "\uC774 \uAE30\uAE30\uC5D0\uB9CC \uBCF4\uC774\uAE30 (\uD30C\uC77C \uC120\uD0DD)",
     clearImage: "\uC774\uBBF8\uC9C0 \uC81C\uAC70",
     save: "\uCD5C\uC885 \uC800\uC7A5",
     savedOk: "\uC800\uC7A5\uB418\uC5C8\uC2B5\uB2C8\uB2E4.",
@@ -562,6 +570,9 @@
     optFontGothic: document.getElementById("optFontGothic"),
     lblEditMinutes: document.getElementById("lblEditMinutes"),
     editMinutes: document.getElementById("editMinutes"),
+    lblEditImagePath: document.getElementById("lblEditImagePath"),
+    editImagePath: document.getElementById("editImagePath"),
+    imgSyncHint: document.getElementById("imgSyncHint"),
     lblEditImage: document.getElementById("lblEditImage"),
     editImage: document.getElementById("editImage"),
     editThumb: document.getElementById("editThumb"),
@@ -611,6 +622,9 @@
     els.optFontNanum.textContent = T.fontNanum;
     els.optFontGothic.textContent = T.fontGothic;
     els.lblEditMinutes.textContent = T.lblMinutes;
+    els.lblEditImagePath.textContent = T.lblImagePath;
+    els.editImagePath.placeholder = T.phImagePath;
+    els.imgSyncHint.textContent = T.imgSyncHint;
     els.lblEditImage.textContent = T.lblImage;
     els.clearEditImageBtn.textContent = T.clearImage;
     els.saveActivityBtn.textContent = T.save;
@@ -913,6 +927,7 @@
     els.chkTimer.checked = !!activity.content.timer;
     editingImageDataUrl = activity.imageDataUrl || "";
     editingImagePath = activity.image || "";
+    els.editImagePath.value = editingImagePath;
     var preview = editingImageDataUrl || editingImagePath;
     els.editThumbRow.hidden = !preview;
     if (preview) els.editThumb.src = preview;
@@ -1049,8 +1064,14 @@
       imageDataUrl: ""
     };
     if (content.image) {
-      payload.imageDataUrl = editingImageDataUrl;
-      payload.image = editingImageDataUrl ? "" : editingImagePath;
+      var pathFromInput = els.editImagePath.value.trim();
+      if (editingImageDataUrl) {
+        payload.imageDataUrl = editingImageDataUrl;
+        payload.image = "";
+      } else {
+        payload.imageDataUrl = "";
+        payload.image = pathFromInput || editingImagePath;
+      }
     }
     if (state.editingId) {
       for (var i = 0; i < state.activities.length; i++) {
@@ -1138,17 +1159,47 @@
     }
   }
 
+  function decodeActivitiesJson(buf) {
+    var bytes = new Uint8Array(buf);
+    if (bytes.length >= 2 && bytes[0] === 0xFF && bytes[1] === 0xFE) {
+      return new TextDecoder("utf-16le").decode(buf);
+    }
+    if (bytes.length >= 2 && bytes[0] === 0xFE && bytes[1] === 0xFF) {
+      return new TextDecoder("utf-16be").decode(buf);
+    }
+    return new TextDecoder("utf-8").decode(buf);
+  }
+
+  function fetchActivitiesJson() {
+    return fetch("activities.json?v=" + Date.now())
+      .then(function (res) {
+        if (!res.ok) throw new Error("fetch fail");
+        return res.arrayBuffer();
+      })
+      .then(function (buf) {
+        return JSON.parse(decodeActivitiesJson(buf));
+      });
+  }
+
+  function applyActivitiesData(data, done) {
+    if (data.activities && data.activities.length > 0) {
+      state.activities = data.activities.map(normalizeActivity);
+      state.activeId = data.activeId || data.activities[0].id;
+      save();
+      done();
+      return true;
+    }
+    return false;
+  }
+
   function reloadFromGitHub() {
     if (!confirm(T.reloadConfirm)) return;
-    fetch("activities.json?v=" + Date.now())
-      .then(function (res) { return res.json(); })
+    fetchActivitiesJson()
       .then(function (data) {
-        if (data.activities && data.activities.length > 0) {
-          state.activities = data.activities.map(normalizeActivity);
-          state.activeId = data.activities[0].id;
-          save();
+        if (applyActivitiesData(data, function () {
           selectActivity(state.activeId);
-        }
+        })) return;
+        throw new Error("empty");
       })
       .catch(function () {
         alert("activities.json\uC744 \uBD88\uB7EC\uC62C \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.\nPC\uC5D0\uC11C git push\uB85C \uC62C\uB9AC\uACE0, \uC6F9\uC5D0 \uBD99\uC5EC\uB123\uC9C0 \uB9C8\uC138\uC694.");
@@ -1163,26 +1214,24 @@
   }
 
   function loadActivities(done) {
-    try {
-      var data = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
-      if (data.activities && data.activities.length > 0) {
-        state.activities = data.activities.map(normalizeActivity);
-        state.activeId = data.activeId || data.activities[0].id;
-        done();
-        return;
-      }
-    } catch (e) {}
-    fetch("activities.json?v=" + Date.now())
-      .then(function (res) { return res.json(); })
+    fetchActivitiesJson()
       .then(function (data) {
-        state.activities = (data.activities && data.activities.length) ? data.activities.map(normalizeActivity) : defaultActivities();
-        state.activeId = state.activities[0].id;
-        save();
-        done();
+        if (applyActivitiesData(data, done)) return;
+        throw new Error("empty");
       })
       .catch(function () {
+        try {
+          var data = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+          if (data.activities && data.activities.length > 0) {
+            state.activities = data.activities.map(normalizeActivity);
+            state.activeId = data.activeId || data.activities[0].id;
+            done();
+            return;
+          }
+        } catch (e) {}
         state.activities = defaultActivities();
         state.activeId = state.activities[0].id;
+        save();
         done();
       });
   }
@@ -1200,6 +1249,7 @@
     reader.onload = function () {
       editingImageDataUrl = reader.result;
       editingImagePath = "";
+      els.editImagePath.value = "";
       els.editThumb.src = editingImageDataUrl;
       els.editThumbRow.hidden = false;
     };
@@ -1208,8 +1258,17 @@
   els.clearEditImageBtn.addEventListener("click", function () {
     editingImageDataUrl = "";
     editingImagePath = "";
+    els.editImagePath.value = "";
     els.editImage.value = "";
     els.editThumbRow.hidden = true;
+  });
+  els.editImagePath.addEventListener("input", function () {
+    if (els.editImagePath.value.trim()) {
+      editingImageDataUrl = "";
+      editingImagePath = els.editImagePath.value.trim();
+      els.editThumb.src = editingImagePath;
+      els.editThumbRow.hidden = false;
+    }
   });
   els.saveActivityBtn.addEventListener("click", saveActivity);
   els.newActivityBtn.addEventListener("click", newActivity);
